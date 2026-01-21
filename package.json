@@ -10,7 +10,8 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "start": "turbo start",
-    "clean": "turbo clean"
+    "clean": "turbo clean",
+    "search": "bun run --cwd apps/api search"
   },
   "devDependencies": {
     "turbo": "^2"
