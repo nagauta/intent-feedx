@@ -82,13 +82,12 @@
 ## 🛠 技術スタック
 
 ### バックエンド
-- Node.js
+- Hono.js
 - SERP API（Google検索）
 - Twitter oEmbed API（埋め込みHTML取得）
 
 ### フロントエンド
-- Webアプリ（フレームワークは後で決定）
-- HTML/CSS/JavaScript
+- Next.js
 
 ### データ保存
 - JSONファイル形式
