@@ -10,6 +10,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "dayjs": "^1.11.19",
     "hono": "^4"
   },
   "devDependencies": {

@@ -1,3 +1,4 @@
+import dayjs from 'dayjs'
 
 interface SerpApiResponse {
   organic_results?: Array<{
@@ -29,13 +30,11 @@ interface SearchResult {
 const SERP_API_KEY = process.env.SERP_API_KEY
 
 function getYesterdayDate(): string {
-  const date = new Date()
-  date.setDate(date.getDate() - 1)
-  return date.toISOString().split('T')[0]
+  return dayjs().subtract(1, 'day').format('YYYY-MM-DD')
 }
 
 function getTodayDate(): string {
-  return new Date().toISOString().split('T')[0]
+  return dayjs().format('YYYY-MM-DD')
 }
 
 function buildSearchQuery(keyword: string, afterDate: string): string {
