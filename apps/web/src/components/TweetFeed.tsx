@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef, useCallback } from 'react'
 import useSWRInfinite from 'swr/infinite'
 import { TweetEmbed } from './TweetEmbed'
 
@@ -33,9 +34,34 @@ export function TweetFeed() {
     fetcher
   )
 
+  const loaderRef = useRef<HTMLDivElement>(null)
+
   const tweets = data ? data.flatMap((page) => page.tweets) : []
   const hasMore = data ? data[data.length - 1]?.hasMore : false
-  const isLoadingMore = isLoading || (size > 0 && data && typeof data[size - 1] === 'undefined')
+  const isLoadingMore = isValidating
+
+  const loadMore = useCallback(() => {
+    if (!isLoadingMore && hasMore) {
+      setSize(size + 1)
+    }
+  }, [isLoadingMore, hasMore, setSize, size])
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [loadMore])
 
   if (isLoading) {
     return <div className="loading">読み込み中...</div>
@@ -60,13 +86,9 @@ export function TweetFeed() {
       </div>
 
       {hasMore && (
-        <button
-          className="load-more-button"
-          onClick={() => setSize(size + 1)}
-          disabled={isLoadingMore}
-        >
-          {isLoadingMore ? '読み込み中...' : 'もっと見る'}
-        </button>
+        <div ref={loaderRef} className="loader">
+          {isLoadingMore && <span className="loader-spinner" />}
+        </div>
       )}
     </div>
   )
