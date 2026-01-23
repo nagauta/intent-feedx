@@ -5,7 +5,6 @@ export default function Home() {
     <main className="container">
       <header className="header">
         <h1>Intent FeedX</h1>
-        <p>コミュニティの声を収集</p>
       </header>
       <TweetFeed />
     </main>
