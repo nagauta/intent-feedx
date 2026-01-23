@@ -25,10 +25,10 @@
 
 ### 1. 検索・収集機能
 - [ ] 複数キーワードの設定ファイル管理（`keywords.json`など）
-- [ ] キーワードごとに日時指定での自動検索
-- [ ] SERP API経由でGoogle検索結果を取得
+- [x] キーワードごとに日時指定での自動検索
+- [x] SERP API経由でGoogle検索結果を取得
   - X.com検索も含む（`site:x.com "キーワード" after:YYYY-MM-DD`形式）
-- [ ] 検索結果をJSON形式で保存
+- [x] 検索結果をJSON形式で保存
 - [ ] Twitter oEmbed APIで埋め込みHTML取得
 - [ ] 重複URL（同じツイート）の自動スキップ
 

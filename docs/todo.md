@@ -18,12 +18,12 @@
 - 手動実行により、最低限の情報収集ができるか
 
 **成果物**:
-- [ ] `search.js`: SERP API統合スクリプト
-- [ ] ハードコードされた1キーワードで検索実行
-- [ ] `site:x.com "キーワード" after:日付` 形式のクエリ生成
-- [ ] 検索結果をコンソール出力
-- [ ] 検索結果を`twitter-results-YYYY-MM-DD.json`に保存
-- [ ] `npm start`で実行可能
+- [x] `search.js`: SERP API統合スクリプト
+- [x] ハードコードされた1キーワードで検索実行
+- [x] `site:x.com "キーワード" after:日付` 形式のクエリ生成
+- [x] 検索結果をコンソール出力
+- [x] 検索結果を`twitter-results-YYYY-MM-DD.json`に保存
+- [x] `bun run scripts/search.ts <keyword>`で実行可能
 
 **検証方法**:
 1. スクリプトを実行
