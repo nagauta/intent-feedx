@@ -11,7 +11,7 @@
     "lint": "turbo lint",
     "start": "turbo start",
     "clean": "turbo clean",
-    "search": "bun run --cwd apps/api search"
+    "search": "bun run scripts/search.ts"
   },
   "devDependencies": {
     "turbo": "^2"
