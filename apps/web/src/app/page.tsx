@@ -5,7 +5,7 @@ export default function Home() {
   return (
     <main className="container">
       <header className="header">
-        <h1>Intent FeedX</h1>
+        <h1>Intent Feed</h1>
         <Link href="/admin" className="settings-link" aria-label="設定">
           <svg
             width="24"
