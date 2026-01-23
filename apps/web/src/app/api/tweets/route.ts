@@ -30,7 +30,8 @@ export async function GET(request: Request) {
       }
     }
 
-    // 全ツイートをフラット化（embedSuccess のみ）
+    // 全ツイートをフラット化（embedSuccess のみ）、URLで重複排除
+    const seenUrls = new Set<string>()
     const allTweets = allResults
       .flatMap((result) =>
         result.tweets
@@ -41,6 +42,11 @@ export async function GET(request: Request) {
             searchDate: result.searchDate,
           }))
       )
+      .filter((tweet) => {
+        if (seenUrls.has(tweet.url)) return false
+        seenUrls.add(tweet.url)
+        return true
+      })
 
     // ページネーション
     const start = page * PAGE_SIZE
