@@ -61,10 +61,6 @@ export function TweetFeed() {
       <div className="tweet-list">
         {displayTweets.map((tweet, index) => (
           <div key={`${tweet.url}-${index}`} className="tweet-card">
-            <div className="tweet-meta">
-              <span className="keyword-tag">{tweet.keyword}</span>
-              <span className="search-date">{tweet.searchDate}</span>
-            </div>
             <TweetEmbed html={tweet.embedHtml!} />
           </div>
         ))}
