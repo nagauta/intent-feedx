@@ -1,0 +1,19 @@
+{
+  "keywords": [
+    {
+      "id": "raycast",
+      "query": "Raycast",
+      "enabled": true
+    },
+    {
+      "id": "cursor",
+      "query": "Cursor AI",
+      "enabled": true
+    },
+    {
+      "id": "claude-code",
+      "query": "Claude Code",
+      "enabled": true
+    }
+  ]
+}

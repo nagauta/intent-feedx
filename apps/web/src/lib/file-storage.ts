@@ -2,7 +2,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import type { SearchResult } from './search'
 
-const DATA_DIR = path.join(process.cwd(), '..', '..', 'data')
+const DATA_DIR = path.join(process.cwd(), 'data')
 
 /**
  * 検索結果をJSONファイルに保存する
