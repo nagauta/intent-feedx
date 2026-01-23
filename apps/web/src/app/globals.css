@@ -19,6 +19,9 @@ body {
 }
 
 .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   background: #fff;
   border-bottom: 1px solid #e1e8ed;
   padding: 1rem;
@@ -30,6 +33,15 @@ body {
   font-size: 1.5rem;
   font-weight: 700;
   color: #14171a;
+}
+
+.settings-link {
+  color: #657786;
+  transition: color 0.2s;
+}
+
+.settings-link:hover {
+  color: #1da1f2;
 }
 
 .header p {
