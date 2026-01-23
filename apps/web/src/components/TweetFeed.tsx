@@ -78,8 +78,8 @@ export function TweetFeed() {
   return (
     <div className="tweet-feed">
       <div className="tweet-list">
-        {tweets.map((tweet, index) => (
-          <div key={`${tweet.url}-${index}`} className="tweet-card">
+        {tweets.map((tweet) => (
+          <div key={tweet.url} className="tweet-card">
             <TweetEmbed html={tweet.embedHtml!} />
           </div>
         ))}

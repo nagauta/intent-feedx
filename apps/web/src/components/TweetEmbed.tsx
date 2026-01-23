@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, memo } from 'react'
 
 interface TweetEmbedProps {
   html: string
@@ -16,14 +16,33 @@ declare global {
   }
 }
 
-export function TweetEmbed({ html }: TweetEmbedProps) {
+export const TweetEmbed = memo(function TweetEmbed({ html }: TweetEmbedProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const loadedRef = useRef(false)
 
   useEffect(() => {
-    if (containerRef.current && window.twttr) {
-      window.twttr.widgets.load(containerRef.current)
+    if (loadedRef.current) return
+
+    const loadWidget = () => {
+      if (containerRef.current && window.twttr) {
+        window.twttr.widgets.load(containerRef.current)
+        loadedRef.current = true
+      }
     }
-  }, [html])
+
+    // twttrがまだ読み込まれていない場合は待機
+    if (window.twttr) {
+      loadWidget()
+    } else {
+      const interval = setInterval(() => {
+        if (window.twttr) {
+          loadWidget()
+          clearInterval(interval)
+        }
+      }, 100)
+      return () => clearInterval(interval)
+    }
+  }, [])
 
   return (
     <div
@@ -32,4 +51,4 @@ export function TweetEmbed({ html }: TweetEmbedProps) {
       className="tweet-embed"
     />
   )
-}
+})
