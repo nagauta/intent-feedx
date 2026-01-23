@@ -49,11 +49,11 @@
 - ツイートの内容を視覚的に確認できる形式でデータが保存されるか
 
 **成果物**:
-- [ ] Twitter oEmbed API統合
-- [ ] 各ツイートURLに対してoEmbed呼び出し
-- [ ] `embedHtml`と`authorName`をJSON保存
-- [ ] エラーハンドリング（削除されたツイート、非公開など）
-- [ ] `embedSuccess`フラグの追加
+- [x] Twitter oEmbed API統合
+- [x] 各ツイートURLに対してoEmbed呼び出し
+- [x] `embedHtml`と`authorName`をJSON保存
+- [x] エラーハンドリング（削除されたツイート、非公開など）
+- [x] `embedSuccess`フラグの追加
 
 **検証方法**:
 1. スプリント1の結果を使って実行
