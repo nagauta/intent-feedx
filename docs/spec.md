@@ -30,7 +30,7 @@
   - X.com検索も含む（`site:x.com "キーワード" after:YYYY-MM-DD`形式）
 - [x] 検索結果をJSON形式で保存
 - [x] Twitter oEmbed APIで埋め込みHTML取得
-- [ ] 重複URL（同じツイート）の自動スキップ
+- [x] 重複URL（同じツイート）の自動スキップ
 
 ### 2. UI機能
 - [ ] Webアプリで収集データを閲覧
