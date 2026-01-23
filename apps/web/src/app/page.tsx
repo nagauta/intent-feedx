@@ -1,8 +1,13 @@
+import { TweetFeed } from '@/components/TweetFeed'
+
 export default function Home() {
   return (
-    <main style={{ padding: '2rem' }}>
-      <h1>Intent FeedX</h1>
-      <p>Community information collection system</p>
+    <main className="container">
+      <header className="header">
+        <h1>Intent FeedX</h1>
+        <p>コミュニティの声を収集</p>
+      </header>
+      <TweetFeed />
     </main>
   )
 }
