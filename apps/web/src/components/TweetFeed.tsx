@@ -58,9 +58,6 @@ export function TweetFeed() {
 
   return (
     <div className="tweet-feed">
-      <div className="feed-header">
-        <span className="tweet-count">{displayTweets.length}件のツイート</span>
-      </div>
       <div className="tweet-list">
         {displayTweets.map((tweet, index) => (
           <div key={`${tweet.url}-${index}`} className="tweet-card">
