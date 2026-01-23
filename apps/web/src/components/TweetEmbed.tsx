@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, memo } from 'react'
+import { useEffect, useRef, memo, useState } from 'react'
 
 interface TweetEmbedProps {
   html: string
@@ -19,6 +19,7 @@ declare global {
 export const TweetEmbed = memo(function TweetEmbed({ html }: TweetEmbedProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const loadedRef = useRef(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     if (loadedRef.current) return
@@ -27,10 +28,11 @@ export const TweetEmbed = memo(function TweetEmbed({ html }: TweetEmbedProps) {
       if (containerRef.current && window.twttr) {
         window.twttr.widgets.load(containerRef.current)
         loadedRef.current = true
+        // 少し待ってからスケルトンを非表示
+        setTimeout(() => setIsLoading(false), 500)
       }
     }
 
-    // twttrがまだ読み込まれていない場合は待機
     if (window.twttr) {
       loadWidget()
     } else {
@@ -45,10 +47,28 @@ export const TweetEmbed = memo(function TweetEmbed({ html }: TweetEmbedProps) {
   }, [])
 
   return (
-    <div
-      ref={containerRef}
-      dangerouslySetInnerHTML={{ __html: html }}
-      className="tweet-embed"
-    />
+    <div className="tweet-embed-wrapper">
+      {isLoading && (
+        <div className="tweet-skeleton">
+          <div className="skeleton-header">
+            <div className="skeleton-avatar" />
+            <div className="skeleton-name-group">
+              <div className="skeleton-name" />
+              <div className="skeleton-handle" />
+            </div>
+          </div>
+          <div className="skeleton-body">
+            <div className="skeleton-line" />
+            <div className="skeleton-line" />
+            <div className="skeleton-line short" />
+          </div>
+        </div>
+      )}
+      <div
+        ref={containerRef}
+        dangerouslySetInnerHTML={{ __html: html }}
+        className={`tweet-embed ${isLoading ? 'hidden' : ''}`}
+      />
+    </div>
   )
 })
