@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { TweetEmbed } from './TweetEmbed'
 
 interface Tweet {
@@ -24,10 +24,6 @@ export function TweetFeed() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // フィルター状態
-  const [selectedKeyword, setSelectedKeyword] = useState<string>('all')
-  const [selectedDate, setSelectedDate] = useState<string>('all')
-
   useEffect(() => {
     async function fetchTweets() {
       try {
@@ -45,37 +41,6 @@ export function TweetFeed() {
     fetchTweets()
   }, [])
 
-  // 利用可能なキーワードと日付を抽出
-  const { keywords, dates } = useMemo(() => {
-    const keywordSet = new Set<string>()
-    const dateSet = new Set<string>()
-
-    tweets.forEach((t) => {
-      if (t.keyword) keywordSet.add(t.keyword)
-      if (t.searchDate) dateSet.add(t.searchDate)
-    })
-
-    return {
-      keywords: Array.from(keywordSet).sort(),
-      dates: Array.from(dateSet).sort().reverse(),
-    }
-  }, [tweets])
-
-  // フィルタリング済みツイート
-  const filteredTweets = useMemo(() => {
-    return tweets.filter((t) => {
-      if (!t.embedSuccess || !t.embedHtml) return false
-      if (selectedKeyword !== 'all' && t.keyword !== selectedKeyword) return false
-      if (selectedDate !== 'all' && t.searchDate !== selectedDate) return false
-      return true
-    })
-  }, [tweets, selectedKeyword, selectedDate])
-
-  const handleReset = () => {
-    setSelectedKeyword('all')
-    setSelectedDate('all')
-  }
-
   if (loading) {
     return <div className="loading">読み込み中...</div>
   }
@@ -88,73 +53,24 @@ export function TweetFeed() {
     return <div className="empty">ツイートがありません</div>
   }
 
-  const totalWithEmbed = tweets.filter((t) => t.embedSuccess && t.embedHtml).length
+  // embedSuccessがtrueのツイートのみ表示
+  const displayTweets = tweets.filter((t) => t.embedSuccess && t.embedHtml)
 
   return (
     <div className="tweet-feed">
-      {/* フィルターUI */}
-      <div className="filter-section">
-        <div className="filter-row">
-          <div className="filter-group">
-            <label htmlFor="keyword-filter">キーワード</label>
-            <select
-              id="keyword-filter"
-              value={selectedKeyword}
-              onChange={(e) => setSelectedKeyword(e.target.value)}
-            >
-              <option value="all">すべて</option>
-              {keywords.map((kw) => (
-                <option key={kw} value={kw}>
-                  {kw}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label htmlFor="date-filter">日付</label>
-            <select
-              id="date-filter"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-            >
-              <option value="all">すべて</option>
-              {dates.map((date) => (
-                <option key={date} value={date}>
-                  {date}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button className="reset-button" onClick={handleReset}>
-            リセット
-          </button>
-        </div>
-      </div>
-
-      {/* 結果ヘッダー */}
       <div className="feed-header">
-        <span className="tweet-count">
-          {filteredTweets.length}件 / {totalWithEmbed}件のツイート
-        </span>
+        <span className="tweet-count">{displayTweets.length}件のツイート</span>
       </div>
-
-      {/* ツイートリスト */}
       <div className="tweet-list">
-        {filteredTweets.length === 0 ? (
-          <div className="empty">該当するツイートがありません</div>
-        ) : (
-          filteredTweets.map((tweet, index) => (
-            <div key={`${tweet.url}-${index}`} className="tweet-card">
-              <div className="tweet-meta">
-                <span className="keyword-tag">{tweet.keyword}</span>
-                <span className="search-date">{tweet.searchDate}</span>
-              </div>
-              <TweetEmbed html={tweet.embedHtml!} />
+        {displayTweets.map((tweet, index) => (
+          <div key={`${tweet.url}-${index}`} className="tweet-card">
+            <div className="tweet-meta">
+              <span className="keyword-tag">{tweet.keyword}</span>
+              <span className="search-date">{tweet.searchDate}</span>
             </div>
-          ))
-        )}
+            <TweetEmbed html={tweet.embedHtml!} />
+          </div>
+        ))}
       </div>
     </div>
   )
