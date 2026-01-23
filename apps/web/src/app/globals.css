@@ -114,3 +114,63 @@ body {
 .error {
   color: #e0245e;
 }
+
+/* フィルターセクション */
+.filter-section {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e1e8ed;
+}
+
+.filter-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 120px;
+}
+
+.filter-group label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #657786;
+}
+
+.filter-group select {
+  padding: 0.5rem;
+  border: 1px solid #e1e8ed;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  background: #fff;
+  color: #14171a;
+  cursor: pointer;
+}
+
+.filter-group select:focus {
+  outline: none;
+  border-color: #1da1f2;
+}
+
+.reset-button {
+  padding: 0.5rem 1rem;
+  background: #f5f8fa;
+  border: 1px solid #e1e8ed;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: #657786;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reset-button:hover {
+  background: #e1e8ed;
+  color: #14171a;
+}
