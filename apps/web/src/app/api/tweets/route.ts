@@ -4,14 +4,18 @@ import path from 'path'
 import type { SearchResult } from '@/lib/search'
 
 const DATA_DIR = path.join(process.cwd(), '..', '..', 'data')
+const PAGE_SIZE = 10
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '0', 10)
+
     const files = await fs.readdir(DATA_DIR)
     const jsonFiles = files
       .filter((f) => f.startsWith('twitter-results-') && f.endsWith('.json'))
       .sort()
-      .reverse() // 新しい順
+      .reverse()
 
     const allResults: SearchResult[] = []
 
@@ -26,17 +30,27 @@ export async function GET() {
       }
     }
 
-    // 全ツイートをフラット化して日付順にソート
-    const allTweets = allResults.flatMap((result) =>
-      result.tweets.map((tweet) => ({
-        ...tweet,
-        keyword: result.keyword,
-        searchDate: result.searchDate,
-      }))
-    )
+    // 全ツイートをフラット化（embedSuccess のみ）
+    const allTweets = allResults
+      .flatMap((result) =>
+        result.tweets
+          .filter((tweet) => tweet.embedSuccess && tweet.embedHtml)
+          .map((tweet) => ({
+            ...tweet,
+            keyword: result.keyword,
+            searchDate: result.searchDate,
+          }))
+      )
+
+    // ページネーション
+    const start = page * PAGE_SIZE
+    const end = start + PAGE_SIZE
+    const tweets = allTweets.slice(start, end)
+    const hasMore = end < allTweets.length
 
     return NextResponse.json({
-      tweets: allTweets,
+      tweets,
+      hasMore,
       totalCount: allTweets.length,
     })
   } catch (error) {

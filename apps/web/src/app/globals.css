@@ -114,3 +114,25 @@ body {
 .error {
   color: #e0245e;
 }
+
+.load-more-button {
+  width: 100%;
+  padding: 1rem;
+  background: #1da1f2;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.load-more-button:hover:not(:disabled) {
+  background: #1a91da;
+}
+
+.load-more-button:disabled {
+  background: #9fcbed;
+  cursor: not-allowed;
+}

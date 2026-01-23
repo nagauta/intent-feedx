@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import useSWRInfinite from 'swr/infinite'
 import { TweetEmbed } from './TweetEmbed'
 
 interface Tweet {
@@ -16,55 +16,58 @@ interface Tweet {
 
 interface TweetsResponse {
   tweets: Tweet[]
+  hasMore: boolean
   totalCount: number
 }
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
+const getKey = (pageIndex: number, previousPageData: TweetsResponse | null) => {
+  if (previousPageData && !previousPageData.hasMore) return null
+  return `/api/tweets?page=${pageIndex}`
+}
+
 export function TweetFeed() {
-  const [tweets, setTweets] = useState<Tweet[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data, error, size, setSize, isLoading, isValidating } = useSWRInfinite<TweetsResponse>(
+    getKey,
+    fetcher
+  )
 
-  useEffect(() => {
-    async function fetchTweets() {
-      try {
-        const res = await fetch('/api/tweets')
-        if (!res.ok) throw new Error('Failed to fetch tweets')
-        const data: TweetsResponse = await res.json()
-        setTweets(data.tweets)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error')
-      } finally {
-        setLoading(false)
-      }
-    }
+  const tweets = data ? data.flatMap((page) => page.tweets) : []
+  const hasMore = data ? data[data.length - 1]?.hasMore : false
+  const isLoadingMore = isLoading || (size > 0 && data && typeof data[size - 1] === 'undefined')
 
-    fetchTweets()
-  }, [])
-
-  if (loading) {
+  if (isLoading) {
     return <div className="loading">読み込み中...</div>
   }
 
   if (error) {
-    return <div className="error">エラー: {error}</div>
+    return <div className="error">エラー: {error.message}</div>
   }
 
   if (tweets.length === 0) {
     return <div className="empty">ツイートがありません</div>
   }
 
-  // embedSuccessがtrueのツイートのみ表示
-  const displayTweets = tweets.filter((t) => t.embedSuccess && t.embedHtml)
-
   return (
     <div className="tweet-feed">
       <div className="tweet-list">
-        {displayTweets.map((tweet, index) => (
+        {tweets.map((tweet, index) => (
           <div key={`${tweet.url}-${index}`} className="tweet-card">
             <TweetEmbed html={tweet.embedHtml!} />
           </div>
         ))}
       </div>
+
+      {hasMore && (
+        <button
+          className="load-more-button"
+          onClick={() => setSize(size + 1)}
+          disabled={isLoadingMore}
+        >
+          {isLoadingMore ? '読み込み中...' : 'もっと見る'}
+        </button>
+      )}
     </div>
   )
 }
