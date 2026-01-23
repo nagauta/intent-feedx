@@ -128,7 +128,16 @@ async function enrichTweetWithOEmbed(basicTweet: BasicTweet): Promise<Tweet> {
   }
 }
 
-export async function search(keyword: string): Promise<SearchResult> {
+export interface SearchOptions {
+  existingUrls?: Set<string>
+}
+
+export interface SearchResultWithStats extends SearchResult {
+  skippedCount: number
+}
+
+export async function search(keyword: string, options: SearchOptions = {}): Promise<SearchResultWithStats> {
+  const { existingUrls = new Set() } = options
   const afterDate = getYesterdayDate()
   const searchDate = getTodayDate()
   const query = buildSearchQuery(keyword, afterDate)
@@ -136,14 +145,22 @@ export async function search(keyword: string): Promise<SearchResult> {
   const response = await searchSerp(query)
   const basicTweets = extractBasicTweets(response)
 
-  // 各ツイートに対してoEmbedを取得
-  console.log(`📥 ${basicTweets.length}件のツイートに対してoEmbed取得中...`)
-  const tweets = await Promise.all(basicTweets.map(enrichTweetWithOEmbed))
+  // 重複チェック
+  const newTweets = basicTweets.filter((t) => !existingUrls.has(t.url))
+  const skippedCount = basicTweets.length - newTweets.length
+
+  if (skippedCount > 0) {
+    console.log(`⏭️  ${skippedCount}件の重複ツイートをスキップ`)
+  }
+
+  // 新規ツイートに対してのみoEmbedを取得
+  console.log(`📥 ${newTweets.length}件のツイートに対してoEmbed取得中...`)
+  const tweets = await Promise.all(newTweets.map(enrichTweetWithOEmbed))
 
   const successCount = tweets.filter((t) => t.embedSuccess).length
   console.log(`✅ oEmbed取得完了: ${successCount}/${tweets.length}件成功`)
 
-  const result: SearchResult = {
+  const result: SearchResultWithStats = {
     searchQuery: query,
     searchDate,
     keyword,
@@ -151,6 +168,7 @@ export async function search(keyword: string): Promise<SearchResult> {
     retrievedCount: tweets.length,
     generatedAt: new Date().toISOString(),
     tweets,
+    skippedCount,
   }
 
   return result

@@ -8,7 +8,7 @@
  */
 
 import { search } from '../apps/web/src/lib/search'
-import { saveSearchResult, logSearchResult } from '../apps/web/src/lib/file-storage'
+import { saveSearchResult, logSearchResult, loadAllExistingUrls } from '../apps/web/src/lib/file-storage'
 import { loadKeywords, getEnabledKeywords } from '../apps/web/src/lib/keywords'
 
 async function main() {
@@ -29,8 +29,14 @@ async function main() {
   })
   console.log('')
 
+  // 既存URLを読み込み（重複チェック用）
+  console.log('📂 既存データを読み込み中...')
+  const existingUrls = await loadAllExistingUrls()
+  console.log(`📊 既存ツイート: ${existingUrls.size}件\n`)
+
   let successCount = 0
   let failCount = 0
+  let totalSkipped = 0
 
   for (const keyword of enabledKeywords) {
     console.log(`\n${'='.repeat(50)}`)
@@ -38,8 +44,14 @@ async function main() {
     console.log('='.repeat(50))
 
     try {
-      const result = await search(keyword.query)
+      const result = await search(keyword.query, { existingUrls })
+      totalSkipped += result.skippedCount
       logSearchResult(result)
+
+      // 新しいURLを既存リストに追加（同セッション内の重複防止）
+      for (const tweet of result.tweets) {
+        existingUrls.add(tweet.url)
+      }
 
       const filePath = await saveSearchResult(result)
       console.log(`✅ 保存完了: ${filePath}`)
@@ -53,9 +65,10 @@ async function main() {
   console.log(`\n${'='.repeat(50)}`)
   console.log('📊 検索完了サマリー')
   console.log('='.repeat(50))
-  console.log(`  成功: ${successCount}件`)
-  console.log(`  失敗: ${failCount}件`)
-  console.log(`  合計: ${enabledKeywords.length}件`)
+  console.log(`  キーワード成功: ${successCount}件`)
+  console.log(`  キーワード失敗: ${failCount}件`)
+  console.log(`  重複スキップ: ${totalSkipped}件`)
+  console.log(`  合計キーワード: ${enabledKeywords.length}件`)
   console.log('')
 
   if (failCount > 0) {

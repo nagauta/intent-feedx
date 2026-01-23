@@ -37,6 +37,38 @@ export async function saveSearchResult(result: SearchResult): Promise<string> {
 }
 
 /**
+ * 全ての既存JSONファイルからツイートURLを抽出する
+ */
+export async function loadAllExistingUrls(): Promise<Set<string>> {
+  const urls = new Set<string>()
+
+  try {
+    const files = await fs.readdir(DATA_DIR)
+    const jsonFiles = files.filter((f) => f.startsWith('twitter-results-') && f.endsWith('.json'))
+
+    for (const file of jsonFiles) {
+      try {
+        const content = await fs.readFile(path.join(DATA_DIR, file), 'utf-8')
+        const data: SearchResult[] = JSON.parse(content)
+        const results = Array.isArray(data) ? data : [data]
+
+        for (const result of results) {
+          for (const tweet of result.tweets) {
+            urls.add(tweet.url)
+          }
+        }
+      } catch {
+        // ファイル読み込みエラーは無視
+      }
+    }
+  } catch {
+    // ディレクトリが存在しない場合は空のセットを返す
+  }
+
+  return urls
+}
+
+/**
  * 検索結果をコンソールに出力する
  */
 export function logSearchResult(result: SearchResult): void {
