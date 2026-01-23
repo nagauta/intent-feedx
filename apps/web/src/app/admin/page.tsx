@@ -1,0 +1,218 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+
+interface Keyword {
+  id: string
+  query: string
+  enabled: boolean
+}
+
+interface SearchStatus {
+  keyword: string
+  status: 'pending' | 'searching' | 'done' | 'error'
+  count?: number
+  error?: string
+}
+
+export default function AdminPage() {
+  const [keywords, setKeywords] = useState<Keyword[]>([])
+  const [newQuery, setNewQuery] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [searchStatuses, setSearchStatuses] = useState<SearchStatus[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+
+  // キーワード一覧取得
+  useEffect(() => {
+    fetchKeywords()
+  }, [])
+
+  const fetchKeywords = async () => {
+    try {
+      const res = await fetch('/api/keywords')
+      const data = await res.json()
+      setKeywords(data)
+    } catch (error) {
+      console.error('Failed to fetch keywords:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // キーワード追加
+  const handleAdd = async () => {
+    if (!newQuery.trim()) return
+
+    try {
+      const res = await fetch('/api/keywords', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: newQuery.trim() }),
+      })
+
+      if (res.ok) {
+        setNewQuery('')
+        fetchKeywords()
+      } else {
+        const error = await res.json()
+        alert(error.error)
+      }
+    } catch (error) {
+      console.error('Failed to add keyword:', error)
+    }
+  }
+
+  // 有効/無効切り替え
+  const handleToggle = async (id: string, enabled: boolean) => {
+    try {
+      await fetch('/api/keywords', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, enabled: !enabled }),
+      })
+      fetchKeywords()
+    } catch (error) {
+      console.error('Failed to toggle keyword:', error)
+    }
+  }
+
+  // キーワード削除
+  const handleDelete = async (id: string) => {
+    if (!confirm('本当に削除しますか？')) return
+
+    try {
+      await fetch(`/api/keywords?id=${id}`, { method: 'DELETE' })
+      fetchKeywords()
+    } catch (error) {
+      console.error('Failed to delete keyword:', error)
+    }
+  }
+
+  // 手動検索実行
+  const handleSearch = async () => {
+    const enabledKeywords = keywords.filter((k) => k.enabled)
+    if (enabledKeywords.length === 0) {
+      alert('有効なキーワードがありません')
+      return
+    }
+
+    setIsSearching(true)
+    setSearchStatuses(enabledKeywords.map((k) => ({ keyword: k.query, status: 'pending' })))
+
+    for (const keyword of enabledKeywords) {
+      setSearchStatuses((prev) =>
+        prev.map((s) => (s.keyword === keyword.query ? { ...s, status: 'searching' } : s))
+      )
+
+      try {
+        const res = await fetch(`/api/search?keyword=${encodeURIComponent(keyword.query)}`)
+        const data = await res.json()
+
+        if (res.ok) {
+          setSearchStatuses((prev) =>
+            prev.map((s) =>
+              s.keyword === keyword.query ? { ...s, status: 'done', count: data.retrievedCount } : s
+            )
+          )
+        } else {
+          setSearchStatuses((prev) =>
+            prev.map((s) =>
+              s.keyword === keyword.query ? { ...s, status: 'error', error: data.error } : s
+            )
+          )
+        }
+      } catch (error) {
+        setSearchStatuses((prev) =>
+          prev.map((s) =>
+            s.keyword === keyword.query ? { ...s, status: 'error', error: 'Network error' } : s
+          )
+        )
+      }
+    }
+
+    setIsSearching(false)
+  }
+
+  if (loading) {
+    return <div className="admin-container">読み込み中...</div>
+  }
+
+  return (
+    <div className="admin-container">
+      <header className="admin-header">
+        <h1>管理画面</h1>
+        <a href="/" className="back-link">← フィードに戻る</a>
+      </header>
+
+      {/* キーワード追加 */}
+      <section className="admin-section">
+        <h2>キーワード追加</h2>
+        <div className="add-form">
+          <input
+            type="text"
+            value={newQuery}
+            onChange={(e) => setNewQuery(e.target.value)}
+            placeholder="新しいキーワード"
+            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+          />
+          <button onClick={handleAdd}>追加</button>
+        </div>
+      </section>
+
+      {/* キーワード一覧 */}
+      <section className="admin-section">
+        <h2>キーワード一覧</h2>
+        {keywords.length === 0 ? (
+          <p className="empty-message">キーワードがありません</p>
+        ) : (
+          <ul className="keyword-list">
+            {keywords.map((keyword) => (
+              <li key={keyword.id} className={`keyword-item ${!keyword.enabled ? 'disabled' : ''}`}>
+                <span className="keyword-query">{keyword.query}</span>
+                <div className="keyword-actions">
+                  <button
+                    className={`toggle-btn ${keyword.enabled ? 'on' : 'off'}`}
+                    onClick={() => handleToggle(keyword.id, keyword.enabled)}
+                  >
+                    {keyword.enabled ? 'ON' : 'OFF'}
+                  </button>
+                  <button className="delete-btn" onClick={() => handleDelete(keyword.id)}>
+                    削除
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* 手動検索 */}
+      <section className="admin-section">
+        <h2>手動検索</h2>
+        <button
+          className="search-btn"
+          onClick={handleSearch}
+          disabled={isSearching || keywords.filter((k) => k.enabled).length === 0}
+        >
+          {isSearching ? '検索中...' : '検索実行'}
+        </button>
+
+        {searchStatuses.length > 0 && (
+          <ul className="search-status-list">
+            {searchStatuses.map((status) => (
+              <li key={status.keyword} className={`search-status ${status.status}`}>
+                <span className="status-keyword">{status.keyword}</span>
+                <span className="status-badge">
+                  {status.status === 'pending' && '待機中'}
+                  {status.status === 'searching' && '検索中...'}
+                  {status.status === 'done' && `✓ ${status.count}件`}
+                  {status.status === 'error' && `✗ ${status.error}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  )
+}
