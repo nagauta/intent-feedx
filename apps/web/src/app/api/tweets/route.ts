@@ -3,7 +3,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import type { SearchResult } from '@/lib/search'
 
-const DATA_DIR = path.join(process.cwd(), '..', '..', 'data')
+const DATA_DIR = path.join(process.cwd(), 'data')
 const PAGE_SIZE = 10
 
 export async function GET(request: Request) {
