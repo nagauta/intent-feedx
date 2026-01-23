@@ -15,6 +15,14 @@ export interface Tweet {
   url: string
   title: string
   snippet: string
+  embedSuccess: boolean
+  embedHtml?: string
+  authorName?: string
+}
+
+interface OEmbedResponse {
+  html: string
+  author_name: string
 }
 
 export interface SearchResult {
@@ -37,6 +45,26 @@ function getTodayDate(): string {
 
 function buildSearchQuery(keyword: string, afterDate: string): string {
   return `site:x.com "${keyword}" after:${afterDate}`
+}
+
+async function fetchOEmbed(tweetUrl: string): Promise<OEmbedResponse | null> {
+  try {
+    const params = new URLSearchParams({
+      url: tweetUrl,
+      omit_script: 'true',
+    })
+    const response = await fetch(`https://publish.twitter.com/oembed?${params.toString()}`)
+
+    if (!response.ok) {
+      console.warn(`oEmbed failed for ${tweetUrl}: ${response.status}`)
+      return null
+    }
+
+    return response.json()
+  } catch (error) {
+    console.warn(`oEmbed error for ${tweetUrl}:`, error)
+    return null
+  }
 }
 
 async function searchSerp(query: string): Promise<SerpApiResponse> {
@@ -62,7 +90,13 @@ async function searchSerp(query: string): Promise<SerpApiResponse> {
   return response.json()
 }
 
-function extractTweets(response: SerpApiResponse): Tweet[] {
+interface BasicTweet {
+  url: string
+  title: string
+  snippet: string
+}
+
+function extractBasicTweets(response: SerpApiResponse): BasicTweet[] {
   if (!response.organic_results) {
     return []
   }
@@ -76,13 +110,38 @@ function extractTweets(response: SerpApiResponse): Tweet[] {
     }))
 }
 
+async function enrichTweetWithOEmbed(basicTweet: BasicTweet): Promise<Tweet> {
+  const oembed = await fetchOEmbed(basicTweet.url)
+
+  if (oembed) {
+    return {
+      ...basicTweet,
+      embedSuccess: true,
+      embedHtml: oembed.html,
+      authorName: oembed.author_name,
+    }
+  }
+
+  return {
+    ...basicTweet,
+    embedSuccess: false,
+  }
+}
+
 export async function search(keyword: string): Promise<SearchResult> {
   const afterDate = getYesterdayDate()
   const searchDate = getTodayDate()
   const query = buildSearchQuery(keyword, afterDate)
 
   const response = await searchSerp(query)
-  const tweets = extractTweets(response)
+  const basicTweets = extractBasicTweets(response)
+
+  // 各ツイートに対してoEmbedを取得
+  console.log(`📥 ${basicTweets.length}件のツイートに対してoEmbed取得中...`)
+  const tweets = await Promise.all(basicTweets.map(enrichTweetWithOEmbed))
+
+  const successCount = tweets.filter((t) => t.embedSuccess).length
+  console.log(`✅ oEmbed取得完了: ${successCount}/${tweets.length}件成功`)
 
   const result: SearchResult = {
     searchQuery: query,
