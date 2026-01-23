@@ -24,7 +24,7 @@
 ## ✅ やること（スコープ内）
 
 ### 1. 検索・収集機能
-- [ ] 複数キーワードの設定ファイル管理（`keywords.json`など）
+- [x] 複数キーワードの設定ファイル管理（`config/keywords.json`）
 - [x] キーワードごとに日時指定での自動検索
 - [x] SERP API経由でGoogle検索結果を取得
   - X.com検索も含む（`site:x.com "キーワード" after:YYYY-MM-DD`形式）
