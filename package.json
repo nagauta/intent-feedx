@@ -11,7 +11,10 @@
     "lint": "turbo lint",
     "start": "turbo start",
     "clean": "turbo clean",
-    "search": "bun run scripts/search.ts"
+    "search": "bun run scripts/search.ts",
+    "db:push": "bun run --cwd apps/web db:push",
+    "db:seed": "bun run --cwd apps/web db:seed",
+    "db:studio": "bun run --cwd apps/web db:studio"
   },
   "devDependencies": {
     "turbo": "^2"
