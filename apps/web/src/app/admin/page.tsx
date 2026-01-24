@@ -9,11 +9,19 @@ interface Keyword {
   enabled: boolean
 }
 
+interface TweetResult {
+  url: string
+  title: string
+  snippet: string
+}
+
 interface SearchStatus {
   keyword: string
   status: 'pending' | 'searching' | 'done' | 'error'
   count?: number
   error?: string
+  searchQuery?: string
+  tweets?: TweetResult[]
 }
 
 export default function AdminPage() {
@@ -135,9 +143,22 @@ export default function AdminPage() {
         const data = await res.json()
 
         if (res.ok) {
+          const tweets = data.tweets?.map((t: TweetResult) => ({
+            url: t.url,
+            title: t.title,
+            snippet: t.snippet,
+          })) || []
           setSearchStatuses((prev) =>
             prev.map((s) =>
-              s.keyword === keyword.query ? { ...s, status: 'done', count: data.retrievedCount } : s
+              s.keyword === keyword.query
+                ? {
+                    ...s,
+                    status: 'done',
+                    count: data.retrievedCount,
+                    searchQuery: data.searchQuery,
+                    tweets,
+                  }
+                : s
             )
           )
         } else {
@@ -240,13 +261,34 @@ export default function AdminPage() {
           <ul className="search-status-list">
             {searchStatuses.map((status) => (
               <li key={status.keyword} className={`search-status ${status.status}`}>
-                <span className="status-keyword">{status.keyword}</span>
-                <span className="status-badge">
-                  {status.status === 'pending' && '待機中'}
-                  {status.status === 'searching' && '検索中...'}
-                  {status.status === 'done' && `✓ ${status.count}件`}
-                  {status.status === 'error' && `✗ ${status.error}`}
-                </span>
+                <div className="status-header">
+                  <span className="status-keyword">{status.keyword}</span>
+                  <span className="status-badge">
+                    {status.status === 'pending' && '待機中'}
+                    {status.status === 'searching' && '検索中...'}
+                    {status.status === 'done' && `✓ ${status.count}件`}
+                    {status.status === 'error' && `✗ ${status.error}`}
+                  </span>
+                </div>
+                {status.status === 'done' && status.searchQuery && (
+                  <div className="status-details">
+                    <div className="search-query-used">
+                      検索クエリ: <code>{status.searchQuery}</code>
+                    </div>
+                    {status.tweets && status.tweets.length > 0 && (
+                      <ul className="tweet-results">
+                        {status.tweets.map((tweet) => (
+                          <li key={tweet.url} className="tweet-result-item">
+                            <a href={tweet.url} target="_blank" rel="noopener noreferrer">
+                              {tweet.title}
+                            </a>
+                            <p className="tweet-snippet">{tweet.snippet}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
