@@ -4,7 +4,7 @@
  * 複数キーワード一括検索スクリプト
  * 使い方: bun run scripts/search-all.ts
  *
- * data/keywords.json から有効なキーワードを読み込み、順次検索を実行します。
+ * DBから有効なキーワードを読み込み、順次検索を実行します。
  */
 
 import { search } from '../apps/web/src/lib/search'
@@ -18,7 +18,7 @@ async function main() {
   const enabledKeywords = getEnabledKeywords(allKeywords)
 
   if (enabledKeywords.length === 0) {
-    console.error('❌ 有効なキーワードがありません。data/keywords.json を確認してください。')
+    console.error('❌ 有効なキーワードがありません。DBにキーワードを追加してください。')
     process.exit(1)
   }
 
@@ -53,8 +53,8 @@ async function main() {
         existingUrls.add(tweet.url)
       }
 
-      const filePath = await saveSearchResult(result)
-      console.log(`✅ 保存完了: ${filePath}`)
+      const savedCount = await saveSearchResult(result)
+      console.log(`✅ DB保存完了: ${savedCount}件`)
       successCount++
     } catch (error) {
       console.error(`❌ [${keyword.id}] 検索失敗:`, error)

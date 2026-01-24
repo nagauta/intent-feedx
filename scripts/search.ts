@@ -29,9 +29,9 @@ async function main() {
     // コンソール出力
     logSearchResult(result)
 
-    // ファイル保存
-    const filePath = await saveSearchResult(result)
-    console.log(`✅ ファイルに保存しました: ${filePath}`)
+    // DB保存
+    const savedCount = await saveSearchResult(result)
+    console.log(`✅ DBに保存しました: ${savedCount}件`)
 
     console.log('\n✨ 検索が完了しました！')
   } catch (error) {

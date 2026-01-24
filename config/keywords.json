@@ -1,9 +1,0 @@
-{
-  "keywords": [
-    {
-      "id": "site:x.com-\"raycast\"-after:2026-01-23",
-      "query": "site:x.com \"Raycast\" after:2026-01-23",
-      "enabled": true
-    }
-  ]
-}

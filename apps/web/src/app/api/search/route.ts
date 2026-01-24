@@ -5,7 +5,7 @@ import { saveSearchResult, logSearchResult } from '@/lib/file-storage'
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const keyword = searchParams.get('keyword')
-  const saveFile = searchParams.get('save') !== 'false' // デフォルトで保存する
+  const save = searchParams.get('save') !== 'false' // デフォルトで保存する
 
   if (!keyword) {
     return NextResponse.json({ error: 'keyword is required' }, { status: 400 })
@@ -13,20 +13,20 @@ export async function GET(request: Request) {
 
   try {
     const result = await search(keyword)
-    
+
     // コンソール出力
     logSearchResult(result)
 
-    // ファイル保存（オプション）
-    let filePath: string | undefined
-    if (saveFile) {
-      filePath = await saveSearchResult(result)
-      console.log(`✅ ファイルに保存しました: ${filePath}`)
+    // DB保存（オプション）
+    let savedCount: number | undefined
+    if (save) {
+      savedCount = await saveSearchResult(result)
+      console.log(`✅ DBに保存しました: ${savedCount}件`)
     }
 
     return NextResponse.json({
       ...result,
-      savedTo: filePath,
+      savedCount,
     })
   } catch (error) {
     console.error('Search error:', error)

@@ -1,25 +1,23 @@
 import { NextResponse } from 'next/server'
-import fs from 'fs/promises'
-import path from 'path'
+import { db, keywords } from '@/db'
+import { eq } from 'drizzle-orm'
 
-const KEYWORDS_PATH = path.join(process.cwd(), '..', '..', 'config', 'keywords.json')
-
-interface Keyword {
+interface KeywordResponse {
   id: string
   query: string
   enabled: boolean
 }
 
-interface KeywordsConfig {
-  keywords: Keyword[]
-}
-
 // キーワード一覧取得
 export async function GET() {
   try {
-    const content = await fs.readFile(KEYWORDS_PATH, 'utf-8')
-    const config: KeywordsConfig = JSON.parse(content)
-    return NextResponse.json(config.keywords)
+    const rows = await db.select().from(keywords)
+    const result: KeywordResponse[] = rows.map((row) => ({
+      id: row.slug,
+      query: row.query,
+      enabled: row.enabled,
+    }))
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Failed to load keywords:', error)
     return NextResponse.json([], { status: 200 })
@@ -35,20 +33,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'query is required' }, { status: 400 })
     }
 
-    const content = await fs.readFile(KEYWORDS_PATH, 'utf-8')
-    const config: KeywordsConfig = JSON.parse(content)
-
-    const id = query.toLowerCase().replace(/\s+/g, '-')
+    const slug = query.toLowerCase().replace(/\s+/g, '-')
 
     // 重複チェック
-    if (config.keywords.some((k) => k.id === id)) {
+    const existing = await db.select().from(keywords).where(eq(keywords.slug, slug))
+    if (existing.length > 0) {
       return NextResponse.json({ error: 'Keyword already exists' }, { status: 400 })
     }
 
-    const newKeyword: Keyword = { id, query, enabled: true }
-    config.keywords.push(newKeyword)
+    const [inserted] = await db.insert(keywords).values({ slug, query, enabled: true }).returning()
 
-    await fs.writeFile(KEYWORDS_PATH, JSON.stringify(config, null, 2), 'utf-8')
+    const newKeyword: KeywordResponse = {
+      id: inserted.slug,
+      query: inserted.query,
+      enabled: inserted.enabled,
+    }
 
     return NextResponse.json(newKeyword, { status: 201 })
   } catch (error) {
@@ -62,19 +61,23 @@ export async function PATCH(request: Request) {
   try {
     const { id, enabled } = await request.json()
 
-    const content = await fs.readFile(KEYWORDS_PATH, 'utf-8')
-    const config: KeywordsConfig = JSON.parse(content)
+    const [updated] = await db
+      .update(keywords)
+      .set({ enabled })
+      .where(eq(keywords.slug, id))
+      .returning()
 
-    const keyword = config.keywords.find((k) => k.id === id)
-    if (!keyword) {
+    if (!updated) {
       return NextResponse.json({ error: 'Keyword not found' }, { status: 404 })
     }
 
-    keyword.enabled = enabled
+    const result: KeywordResponse = {
+      id: updated.slug,
+      query: updated.query,
+      enabled: updated.enabled,
+    }
 
-    await fs.writeFile(KEYWORDS_PATH, JSON.stringify(config, null, 2), 'utf-8')
-
-    return NextResponse.json(keyword)
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Failed to update keyword:', error)
     return NextResponse.json({ error: 'Failed to update keyword' }, { status: 500 })
@@ -91,17 +94,11 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'id is required' }, { status: 400 })
     }
 
-    const content = await fs.readFile(KEYWORDS_PATH, 'utf-8')
-    const config: KeywordsConfig = JSON.parse(content)
+    const [deleted] = await db.delete(keywords).where(eq(keywords.slug, id)).returning()
 
-    const index = config.keywords.findIndex((k) => k.id === id)
-    if (index === -1) {
+    if (!deleted) {
       return NextResponse.json({ error: 'Keyword not found' }, { status: 404 })
     }
-
-    config.keywords.splice(index, 1)
-
-    await fs.writeFile(KEYWORDS_PATH, JSON.stringify(config, null, 2), 'utf-8')
 
     return NextResponse.json({ success: true })
   } catch (error) {

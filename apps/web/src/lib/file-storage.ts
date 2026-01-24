@@ -1,71 +1,46 @@
-import fs from 'fs/promises'
-import path from 'path'
+import { db, tweets } from '@/db'
 import type { SearchResult } from './search'
 
-const DATA_DIR = path.join(process.cwd(), 'data')
-
 /**
- * 検索結果をJSONファイルに保存する
- * ファイル名: twitter-results-YYYY-MM-DD.json
+ * 検索結果をDBに保存する
  */
-export async function saveSearchResult(result: SearchResult): Promise<string> {
-  // dataディレクトリが存在しない場合は作成
-  await fs.mkdir(DATA_DIR, { recursive: true })
-
-  const fileName = `twitter-results-${result.searchDate}.json`
-  const filePath = path.join(DATA_DIR, fileName)
-
-  // 既存ファイルがある場合は読み込む
-  let existingData: SearchResult[] = []
-  try {
-    const fileContent = await fs.readFile(filePath, 'utf-8')
-    existingData = JSON.parse(fileContent)
-    if (!Array.isArray(existingData)) {
-      existingData = [existingData]
-    }
-  } catch (error) {
-    // ファイルが存在しない場合は新規作成
+export async function saveSearchResult(result: SearchResult): Promise<number> {
+  if (result.tweets.length === 0) {
+    return 0
   }
 
-  // 新しい結果を追加
-  existingData.push(result)
+  const values = result.tweets.map((tweet) => ({
+    url: tweet.url,
+    title: tweet.title,
+    snippet: tweet.snippet,
+    embedSuccess: tweet.embedSuccess,
+    embedHtml: tweet.embedHtml ?? null,
+    authorName: tweet.authorName ?? null,
+    keyword: result.keyword,
+    searchDate: result.searchDate,
+  }))
 
-  // ファイルに保存（整形して保存）
-  await fs.writeFile(filePath, JSON.stringify(existingData, null, 2), 'utf-8')
+  // URLが重複している場合は無視してinsert
+  const inserted = await db
+    .insert(tweets)
+    .values(values)
+    .onConflictDoNothing({ target: tweets.url })
+    .returning()
 
-  return filePath
+  return inserted.length
 }
 
 /**
- * 全ての既存JSONファイルからツイートURLを抽出する
+ * 全ての既存ツイートURLを取得する
  */
 export async function loadAllExistingUrls(): Promise<Set<string>> {
-  const urls = new Set<string>()
-
   try {
-    const files = await fs.readdir(DATA_DIR)
-    const jsonFiles = files.filter((f) => f.startsWith('twitter-results-') && f.endsWith('.json'))
-
-    for (const file of jsonFiles) {
-      try {
-        const content = await fs.readFile(path.join(DATA_DIR, file), 'utf-8')
-        const data: SearchResult[] = JSON.parse(content)
-        const results = Array.isArray(data) ? data : [data]
-
-        for (const result of results) {
-          for (const tweet of result.tweets) {
-            urls.add(tweet.url)
-          }
-        }
-      } catch {
-        // ファイル読み込みエラーは無視
-      }
-    }
-  } catch {
-    // ディレクトリが存在しない場合は空のセットを返す
+    const rows = await db.select({ url: tweets.url }).from(tweets)
+    return new Set(rows.map((row) => row.url))
+  } catch (error) {
+    console.error('Failed to load existing URLs from DB:', error)
+    return new Set()
   }
-
-  return urls
 }
 
 /**

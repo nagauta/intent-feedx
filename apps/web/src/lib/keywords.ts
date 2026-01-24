@@ -1,5 +1,5 @@
-import fs from 'fs/promises'
-import path from 'path'
+import { db, keywords } from '@/db'
+import { eq } from 'drizzle-orm'
 
 export interface Keyword {
   id: string
@@ -7,19 +7,30 @@ export interface Keyword {
   enabled: boolean
 }
 
-interface KeywordsConfig {
-  keywords: Keyword[]
-}
-
-const KEYWORDS_PATH = path.join(process.cwd(), 'config', 'keywords.json')
-
 export async function loadKeywords(): Promise<Keyword[]> {
   try {
-    const content = await fs.readFile(KEYWORDS_PATH, 'utf-8')
-    const config: KeywordsConfig = JSON.parse(content)
-    return config.keywords
+    const rows = await db.select().from(keywords)
+    return rows.map((row) => ({
+      id: row.slug,
+      query: row.query,
+      enabled: row.enabled,
+    }))
   } catch (error) {
-    console.error('Failed to load keywords.json:', error)
+    console.error('Failed to load keywords from DB:', error)
+    return []
+  }
+}
+
+export async function loadEnabledKeywords(): Promise<Keyword[]> {
+  try {
+    const rows = await db.select().from(keywords).where(eq(keywords.enabled, true))
+    return rows.map((row) => ({
+      id: row.slug,
+      query: row.query,
+      enabled: row.enabled,
+    }))
+  } catch (error) {
+    console.error('Failed to load enabled keywords from DB:', error)
     return []
   }
 }
