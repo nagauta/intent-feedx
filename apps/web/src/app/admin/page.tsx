@@ -21,6 +21,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [searchStatuses, setSearchStatuses] = useState<SearchStatus[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [todayOnly, setTodayOnly] = useState(true)
 
   // キーワード一覧取得
   useEffect(() => {
@@ -88,6 +89,28 @@ export default function AdminPage() {
     }
   }
 
+  // 日付をYYYY-MM-DD形式でフォーマット
+  const formatDate = (date: Date) => {
+    return date.toISOString().split('T')[0]
+  }
+
+  // 本日フィルタの日付部分を取得
+  const getTodayFilter = () => {
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(today.getDate() - 1)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(today.getDate() + 1)
+
+    return `after:${formatDate(yesterday)} before:${formatDate(tomorrow)}`
+  }
+
+  // 本日フィルタ用のクエリを生成
+  const buildSearchQuery = (query: string) => {
+    if (!todayOnly) return query
+    return `${query} ${getTodayFilter()}`
+  }
+
   // 手動検索実行
   const handleSearch = async () => {
     const enabledKeywords = keywords.filter((k) => k.enabled)
@@ -104,8 +127,10 @@ export default function AdminPage() {
         prev.map((s) => (s.keyword === keyword.query ? { ...s, status: 'searching' } : s))
       )
 
+      const searchQuery = buildSearchQuery(keyword.query)
+
       try {
-        const res = await fetch(`/api/search?keyword=${encodeURIComponent(keyword.query)}`)
+        const res = await fetch(`/api/search?keyword=${encodeURIComponent(searchQuery)}`)
         const data = await res.json()
 
         if (res.ok) {
@@ -161,14 +186,27 @@ export default function AdminPage() {
 
       {/* キーワード一覧 */}
       <section className="admin-section">
-        <h2>キーワード一覧</h2>
+        <div className="section-header">
+          <h2>キーワード一覧</h2>
+          <label className="today-filter">
+            <input
+              type="checkbox"
+              checked={todayOnly}
+              onChange={(e) => setTodayOnly(e.target.checked)}
+            />
+            本日に絞る
+          </label>
+        </div>
         {keywords.length === 0 ? (
           <p className="empty-message">キーワードがありません</p>
         ) : (
           <ul className="keyword-list">
             {keywords.map((keyword) => (
               <li key={keyword.id} className={`keyword-item ${!keyword.enabled ? 'disabled' : ''}`}>
-                <span className="keyword-query">{keyword.query}</span>
+                <div className="keyword-query-wrapper">
+                  <span className="keyword-query">{keyword.query}</span>
+                  {todayOnly && <span className="keyword-filter-hint">+ {getTodayFilter()}</span>}
+                </div>
                 <div className="keyword-actions">
                   <button
                     className={`toggle-btn ${keyword.enabled ? 'on' : 'off'}`}

@@ -193,6 +193,32 @@ body {
   color: #14171a;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.section-header h2 {
+  margin-bottom: 0;
+}
+
+.today-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #657786;
+  cursor: pointer;
+}
+
+.today-filter input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
 .add-form {
   display: flex;
   gap: 0.5rem;
@@ -250,8 +276,19 @@ body {
   text-decoration: line-through;
 }
 
+.keyword-query-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .keyword-query {
   font-size: 0.875rem;
+}
+
+.keyword-filter-hint {
+  font-size: 0.75rem;
+  color: #aab8c2;
 }
 
 .keyword-actions {
