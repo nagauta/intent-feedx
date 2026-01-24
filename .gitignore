@@ -14,7 +14,7 @@ build
 .turbo
 
 # Bun
-bun.lockb
+# bun.lock is committed (text format for Turborepo compatibility)
 
 # IDE
 .idea

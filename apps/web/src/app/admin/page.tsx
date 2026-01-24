@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 
 interface Keyword {
   id: string
@@ -166,7 +167,7 @@ export default function AdminPage() {
     <div className="admin-container">
       <header className="admin-header">
         <h1>管理画面</h1>
-        <a href="/" className="back-link">← フィードに戻る</a>
+        <Link href="/" className="back-link">← フィードに戻る</Link>
       </header>
 
       {/* キーワード追加 */}
