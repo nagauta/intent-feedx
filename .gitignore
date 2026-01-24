@@ -46,3 +46,4 @@ coverage
 data/
 *.json.backup
 twitter-results-*.json
+.vercel
