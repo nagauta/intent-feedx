@@ -448,3 +448,77 @@ body {
   margin: 0.25rem 0 0 0;
   line-height: 1.4;
 }
+
+/* 保存済みツイート一覧 */
+.saved-tweet-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.saved-tweet-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e1e8ed;
+}
+
+.saved-tweet-item:last-child {
+  border-bottom: none;
+}
+
+.saved-tweet-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.saved-tweet-content a {
+  color: #1da1f2;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-tweet-content a:hover {
+  text-decoration: underline;
+}
+
+.tweet-meta-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.tweet-meta-info .keyword-tag {
+  font-size: 0.65rem;
+  padding: 0.125rem 0.375rem;
+}
+
+.tweet-meta-info .search-date {
+  font-size: 0.65rem;
+}
+
+.saved-tweet-actions {
+  flex-shrink: 0;
+}
+
+.restore-btn {
+  padding: 0.25rem 0.5rem;
+  background: #17bf63;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.restore-btn:hover {
+  background: #14a756;
+}

@@ -19,6 +19,7 @@ export const tweets = pgTable('tweets', {
   keyword: text('keyword').notNull(),
   searchDate: text('search_date').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at'),
 })
 
 export type Keyword = typeof keywords.$inferSelect

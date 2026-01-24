@@ -24,6 +24,14 @@ interface SearchStatus {
   tweets?: TweetResult[]
 }
 
+interface SavedTweet {
+  url: string
+  title: string
+  snippet: string
+  keyword: string
+  searchDate: string
+}
+
 export default function AdminPage() {
   const [keywords, setKeywords] = useState<Keyword[]>([])
   const [newQuery, setNewQuery] = useState('')
@@ -31,10 +39,14 @@ export default function AdminPage() {
   const [searchStatuses, setSearchStatuses] = useState<SearchStatus[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [todayOnly, setTodayOnly] = useState(true)
+  const [savedTweets, setSavedTweets] = useState<SavedTweet[]>([])
+  const [deletedTweets, setDeletedTweets] = useState<SavedTweet[]>([])
+  const [showDeleted, setShowDeleted] = useState(false)
 
   // キーワード一覧取得
   useEffect(() => {
     fetchKeywords()
+    fetchTweets()
   }, [])
 
   const fetchKeywords = async () => {
@@ -46,6 +58,46 @@ export default function AdminPage() {
       console.error('Failed to fetch keywords:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // ツイート一覧取得
+  const fetchTweets = async () => {
+    try {
+      const [activeRes, deletedRes] = await Promise.all([
+        fetch('/api/tweets'),
+        fetch('/api/tweets?deleted=true'),
+      ])
+      const activeData = await activeRes.json()
+      const deletedData = await deletedRes.json()
+      setSavedTweets(activeData.tweets || [])
+      setDeletedTweets(deletedData.tweets || [])
+    } catch (error) {
+      console.error('Failed to fetch tweets:', error)
+    }
+  }
+
+  // ツイート削除
+  const handleDeleteTweet = async (url: string) => {
+    try {
+      await fetch(`/api/tweets?url=${encodeURIComponent(url)}`, { method: 'DELETE' })
+      fetchTweets()
+    } catch (error) {
+      console.error('Failed to delete tweet:', error)
+    }
+  }
+
+  // ツイート復元
+  const handleRestoreTweet = async (url: string) => {
+    try {
+      await fetch('/api/tweets', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      })
+      fetchTweets()
+    } catch (error) {
+      console.error('Failed to restore tweet:', error)
     }
   }
 
@@ -289,6 +341,60 @@ export default function AdminPage() {
                     )}
                   </div>
                 )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* 保存済みツイート一覧 */}
+      <section className="admin-section">
+        <div className="section-header">
+          <h2>保存済みツイート ({showDeleted ? deletedTweets.length : savedTweets.length}件)</h2>
+          <label className="today-filter">
+            <input
+              type="checkbox"
+              checked={showDeleted}
+              onChange={(e) => setShowDeleted(e.target.checked)}
+            />
+            削除済みを表示
+          </label>
+        </div>
+        {(showDeleted ? deletedTweets : savedTweets).length === 0 ? (
+          <p className="empty-message">
+            {showDeleted ? '削除済みツイートはありません' : '保存済みツイートはありません'}
+          </p>
+        ) : (
+          <ul className="saved-tweet-list">
+            {(showDeleted ? deletedTweets : savedTweets).map((tweet) => (
+              <li key={tweet.url} className="saved-tweet-item">
+                <div className="saved-tweet-content">
+                  <a href={tweet.url} target="_blank" rel="noopener noreferrer">
+                    {tweet.title}
+                  </a>
+                  <p className="tweet-snippet">{tweet.snippet}</p>
+                  <div className="tweet-meta-info">
+                    <span className="keyword-tag">{tweet.keyword}</span>
+                    <span className="search-date">{tweet.searchDate}</span>
+                  </div>
+                </div>
+                <div className="saved-tweet-actions">
+                  {showDeleted ? (
+                    <button
+                      className="restore-btn"
+                      onClick={() => handleRestoreTweet(tweet.url)}
+                    >
+                      復元
+                    </button>
+                  ) : (
+                    <button
+                      className="delete-btn"
+                      onClick={() => handleDeleteTweet(tweet.url)}
+                    >
+                      削除
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
