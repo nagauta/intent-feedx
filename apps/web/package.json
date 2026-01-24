@@ -6,10 +6,16 @@
     "dev": "next dev --turbopack --port 3000",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@vercel/postgres": "^0.10.0",
     "dayjs": "^1.11.19",
+    "drizzle-orm": "^0.45.1",
     "next": "^15",
     "react": "^19",
     "react-dom": "^19",
@@ -19,6 +25,7 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.8",
     "typescript": "^5"
   }
 }
