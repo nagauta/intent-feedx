@@ -1,3 +1,10 @@
+---
+name: ui-dev
+description: UI開発検証。Reactコンポーネント・ページの実装・修正時に使用。
+tools: Read, Write, Edit, Bash, Grep, Glob
+model: inherit
+---
+
 UI開発検証agentです。
 
 ## 対象ファイル

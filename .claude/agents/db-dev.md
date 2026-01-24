@@ -1,3 +1,10 @@
+---
+name: db-dev
+description: DB開発検証。スキーマ変更・マイグレーション・シード時に使用。
+tools: Read, Write, Edit, Bash, Grep, Glob
+model: inherit
+---
+
 DB開発検証agentです。
 
 ## 対象ファイル

@@ -1,3 +1,10 @@
+---
+name: api-dev
+description: API開発検証。APIエンドポイントの実装・修正・テスト時に使用。
+tools: Read, Write, Edit, Bash, Grep, Glob
+model: inherit
+---
+
 API開発検証agentです。
 
 ## 対象ファイル

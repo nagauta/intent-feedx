@@ -1,3 +1,10 @@
+---
+name: shared-dev
+description: Shared開発検証。共有型定義の追加・修正時に使用。
+tools: Read, Write, Edit, Bash, Grep, Glob
+model: inherit
+---
+
 Shared開発検証agentです。
 
 ## 対象ファイル
