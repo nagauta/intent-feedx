@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import type { ContentSourceType, Content } from '@intent-feedx/shared'
 
 interface Keyword {
   id: string
@@ -8,27 +9,36 @@ interface Keyword {
   enabled: boolean
 }
 
-interface TweetResult {
+interface ContentResult {
   url: string
   title: string
   snippet: string
+  sourceType: ContentSourceType
 }
 
 interface SearchStatus {
   keyword: string
+  sourceType: ContentSourceType
   status: 'pending' | 'searching' | 'done' | 'error'
   count?: number
   error?: string
   searchQuery?: string
-  tweets?: TweetResult[]
+  contents?: ContentResult[]
 }
 
-interface SavedTweet {
+interface SavedContent {
   url: string
   title: string
   snippet: string
+  sourceType: ContentSourceType
   keyword: string
   searchDate: string
+  thumbnailUrl?: string
+}
+
+const SOURCE_LABELS: Record<ContentSourceType, string> = {
+  twitter: 'X (Twitter)',
+  article: '記事',
 }
 
 export default function AdminPage() {
@@ -38,14 +48,15 @@ export default function AdminPage() {
   const [searchStatuses, setSearchStatuses] = useState<SearchStatus[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [todayOnly, setTodayOnly] = useState(true)
-  const [savedTweets, setSavedTweets] = useState<SavedTweet[]>([])
-  const [deletedTweets, setDeletedTweets] = useState<SavedTweet[]>([])
+  const [savedContents, setSavedContents] = useState<SavedContent[]>([])
+  const [deletedContents, setDeletedContents] = useState<SavedContent[]>([])
   const [showDeleted, setShowDeleted] = useState(false)
+  const [selectedSources, setSelectedSources] = useState<ContentSourceType[]>(['twitter', 'article'])
 
   // キーワード一覧取得
   useEffect(() => {
     fetchKeywords()
-    fetchTweets()
+    fetchContents()
   }, [])
 
   const fetchKeywords = async () => {
@@ -60,44 +71,51 @@ export default function AdminPage() {
     }
   }
 
-  // ツイート一覧取得
-  const fetchTweets = async () => {
+  // コンテンツ一覧取得
+  const fetchContents = async () => {
     try {
       const [activeRes, deletedRes] = await Promise.all([
-        fetch('/api/tweets'),
-        fetch('/api/tweets?deleted=true'),
+        fetch('/api/contents'),
+        fetch('/api/contents?deleted=true'),
       ])
       const activeData = await activeRes.json()
       const deletedData = await deletedRes.json()
-      setSavedTweets(activeData.tweets || [])
-      setDeletedTweets(deletedData.tweets || [])
+      setSavedContents(activeData.contents || [])
+      setDeletedContents(deletedData.contents || [])
     } catch (error) {
-      console.error('Failed to fetch tweets:', error)
+      console.error('Failed to fetch contents:', error)
     }
   }
 
-  // ツイート削除
-  const handleDeleteTweet = async (url: string) => {
+  // コンテンツ削除
+  const handleDeleteContent = async (url: string) => {
     try {
-      await fetch(`/api/tweets?url=${encodeURIComponent(url)}`, { method: 'DELETE' })
-      fetchTweets()
+      await fetch(`/api/contents?url=${encodeURIComponent(url)}`, { method: 'DELETE' })
+      fetchContents()
     } catch (error) {
-      console.error('Failed to delete tweet:', error)
+      console.error('Failed to delete content:', error)
     }
   }
 
-  // ツイート復元
-  const handleRestoreTweet = async (url: string) => {
+  // コンテンツ復元
+  const handleRestoreContent = async (url: string) => {
     try {
-      await fetch('/api/tweets', {
+      await fetch('/api/contents', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
       })
-      fetchTweets()
+      fetchContents()
     } catch (error) {
-      console.error('Failed to restore tweet:', error)
+      console.error('Failed to restore content:', error)
     }
+  }
+
+  // ソース選択切り替え
+  const toggleSource = (source: ContentSourceType) => {
+    setSelectedSources((prev) =>
+      prev.includes(source) ? prev.filter((s) => s !== source) : [...prev, source]
+    )
   }
 
   // キーワード追加
@@ -179,56 +197,92 @@ export default function AdminPage() {
       return
     }
 
+    if (selectedSources.length === 0) {
+      alert('検索ソースを選択してください')
+      return
+    }
+
     setIsSearching(true)
-    setSearchStatuses(enabledKeywords.map((k) => ({ keyword: k.query, status: 'pending' })))
 
+    // キーワード x ソースタイプの組み合わせでステータスを作成
+    const initialStatuses: SearchStatus[] = []
     for (const keyword of enabledKeywords) {
-      setSearchStatuses((prev) =>
-        prev.map((s) => (s.keyword === keyword.query ? { ...s, status: 'searching' } : s))
-      )
+      for (const sourceType of selectedSources) {
+        initialStatuses.push({
+          keyword: keyword.query,
+          sourceType,
+          status: 'pending',
+        })
+      }
+    }
+    setSearchStatuses(initialStatuses)
 
-      const searchQuery = buildSearchQuery(keyword.query)
+    // 各キーワード・ソースタイプの組み合わせで検索
+    for (const keyword of enabledKeywords) {
+      for (const sourceType of selectedSources) {
+        const statusKey = `${keyword.query}-${sourceType}`
 
-      try {
-        const res = await fetch(`/api/search?keyword=${encodeURIComponent(searchQuery)}`)
-        const data = await res.json()
+        setSearchStatuses((prev) =>
+          prev.map((s) =>
+            s.keyword === keyword.query && s.sourceType === sourceType
+              ? { ...s, status: 'searching' }
+              : s
+          )
+        )
 
-        if (res.ok) {
-          const tweets = data.tweets?.map((t: TweetResult) => ({
-            url: t.url,
-            title: t.title,
-            snippet: t.snippet,
-          })) || []
+        try {
+          const params = new URLSearchParams({
+            keyword: keyword.query,
+            sourceType,
+          })
+          const res = await fetch(`/api/search?${params.toString()}`)
+          const data = await res.json()
+
+          if (res.ok) {
+            const contents =
+              data.contents?.map((c: ContentResult) => ({
+                url: c.url,
+                title: c.title,
+                snippet: c.snippet,
+                sourceType: c.sourceType,
+              })) || []
+            setSearchStatuses((prev) =>
+              prev.map((s) =>
+                s.keyword === keyword.query && s.sourceType === sourceType
+                  ? {
+                      ...s,
+                      status: 'done',
+                      count: data.retrievedCount,
+                      searchQuery: data.searchQuery,
+                      contents,
+                    }
+                  : s
+              )
+            )
+          } else {
+            setSearchStatuses((prev) =>
+              prev.map((s) =>
+                s.keyword === keyword.query && s.sourceType === sourceType
+                  ? { ...s, status: 'error', error: data.error }
+                  : s
+              )
+            )
+          }
+        } catch (error) {
           setSearchStatuses((prev) =>
             prev.map((s) =>
-              s.keyword === keyword.query
-                ? {
-                    ...s,
-                    status: 'done',
-                    count: data.retrievedCount,
-                    searchQuery: data.searchQuery,
-                    tweets,
-                  }
+              s.keyword === keyword.query && s.sourceType === sourceType
+                ? { ...s, status: 'error', error: 'Network error' }
                 : s
             )
           )
-        } else {
-          setSearchStatuses((prev) =>
-            prev.map((s) =>
-              s.keyword === keyword.query ? { ...s, status: 'error', error: data.error } : s
-            )
-          )
         }
-      } catch (error) {
-        setSearchStatuses((prev) =>
-          prev.map((s) =>
-            s.keyword === keyword.query ? { ...s, status: 'error', error: 'Network error' } : s
-          )
-        )
       }
     }
 
     setIsSearching(false)
+    // 検索後にコンテンツ一覧を更新
+    fetchContents()
   }
 
   if (loading) {
@@ -295,10 +349,28 @@ export default function AdminPage() {
       {/* 手動検索 */}
       <section className="admin-section">
         <h2>手動検索</h2>
+
+        {/* ソース選択 */}
+        <div className="source-selection">
+          <span className="source-selection-label">検索ソース:</span>
+          <div className="source-checkboxes">
+            {(['twitter', 'article'] as ContentSourceType[]).map((source) => (
+              <label key={source} className="source-checkbox">
+                <input
+                  type="checkbox"
+                  checked={selectedSources.includes(source)}
+                  onChange={() => toggleSource(source)}
+                />
+                {SOURCE_LABELS[source]}
+              </label>
+            ))}
+          </div>
+        </div>
+
         <button
           className="search-btn"
           onClick={handleSearch}
-          disabled={isSearching || keywords.filter((k) => k.enabled).length === 0}
+          disabled={isSearching || keywords.filter((k) => k.enabled).length === 0 || selectedSources.length === 0}
         >
           {isSearching ? '検索中...' : '検索実行'}
         </button>
@@ -306,9 +378,17 @@ export default function AdminPage() {
         {searchStatuses.length > 0 && (
           <ul className="search-status-list">
             {searchStatuses.map((status) => (
-              <li key={status.keyword} className={`search-status ${status.status}`}>
+              <li
+                key={`${status.keyword}-${status.sourceType}`}
+                className={`search-status ${status.status}`}
+              >
                 <div className="status-header">
-                  <span className="status-keyword">{status.keyword}</span>
+                  <span className="status-keyword">
+                    <span className={`source-badge source-badge-${status.sourceType}`}>
+                      {SOURCE_LABELS[status.sourceType]}
+                    </span>
+                    {status.keyword}
+                  </span>
                   <span className="status-badge">
                     {status.status === 'pending' && '待機中'}
                     {status.status === 'searching' && '検索中...'}
@@ -321,14 +401,14 @@ export default function AdminPage() {
                     <div className="search-query-used">
                       検索クエリ: <code>{status.searchQuery}</code>
                     </div>
-                    {status.tweets && status.tweets.length > 0 && (
+                    {status.contents && status.contents.length > 0 && (
                       <ul className="tweet-results">
-                        {status.tweets.map((tweet) => (
-                          <li key={tweet.url} className="tweet-result-item">
-                            <a href={tweet.url} target="_blank" rel="noopener noreferrer">
-                              {tweet.title}
+                        {status.contents.map((content) => (
+                          <li key={content.url} className="tweet-result-item">
+                            <a href={content.url} target="_blank" rel="noopener noreferrer">
+                              {content.title}
                             </a>
-                            <p className="tweet-snippet">{tweet.snippet}</p>
+                            <p className="tweet-snippet">{content.snippet}</p>
                           </li>
                         ))}
                       </ul>
@@ -341,10 +421,10 @@ export default function AdminPage() {
         )}
       </section>
 
-      {/* 保存済みツイート一覧 */}
+      {/* 保存済みコンテンツ一覧 */}
       <section className="admin-section">
         <div className="section-header">
-          <h2>保存済みツイート ({showDeleted ? deletedTweets.length : savedTweets.length}件)</h2>
+          <h2>保存済みコンテンツ ({showDeleted ? deletedContents.length : savedContents.length}件)</h2>
           <label className="today-filter">
             <input
               type="checkbox"
@@ -354,36 +434,41 @@ export default function AdminPage() {
             削除済みを表示
           </label>
         </div>
-        {(showDeleted ? deletedTweets : savedTweets).length === 0 ? (
+        {(showDeleted ? deletedContents : savedContents).length === 0 ? (
           <p className="empty-message">
-            {showDeleted ? '削除済みツイートはありません' : '保存済みツイートはありません'}
+            {showDeleted ? '削除済みコンテンツはありません' : '保存済みコンテンツはありません'}
           </p>
         ) : (
           <ul className="saved-tweet-list">
-            {(showDeleted ? deletedTweets : savedTweets).map((tweet) => (
-              <li key={tweet.url} className="saved-tweet-item">
+            {(showDeleted ? deletedContents : savedContents).map((content) => (
+              <li key={content.url} className="saved-tweet-item">
                 <div className="saved-tweet-content">
-                  <a href={tweet.url} target="_blank" rel="noopener noreferrer">
-                    {tweet.title}
+                  <div className="content-header">
+                    <span className={`source-badge source-badge-${content.sourceType}`}>
+                      {SOURCE_LABELS[content.sourceType]}
+                    </span>
+                  </div>
+                  <a href={content.url} target="_blank" rel="noopener noreferrer">
+                    {content.title}
                   </a>
-                  <p className="tweet-snippet">{tweet.snippet}</p>
+                  <p className="tweet-snippet">{content.snippet}</p>
                   <div className="tweet-meta-info">
-                    <span className="keyword-tag">{tweet.keyword}</span>
-                    <span className="search-date">{tweet.searchDate}</span>
+                    <span className="keyword-tag">{content.keyword}</span>
+                    <span className="search-date">{content.searchDate}</span>
                   </div>
                 </div>
                 <div className="saved-tweet-actions">
                   {showDeleted ? (
                     <button
                       className="restore-btn"
-                      onClick={() => handleRestoreTweet(tweet.url)}
+                      onClick={() => handleRestoreContent(content.url)}
                     >
                       復元
                     </button>
                   ) : (
                     <button
                       className="delete-btn"
-                      onClick={() => handleDeleteTweet(tweet.url)}
+                      onClick={() => handleDeleteContent(content.url)}
                     >
                       削除
                     </button>
