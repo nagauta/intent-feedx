@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Script from 'next/script'
+import { Agentation } from 'agentation'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ export default function RootLayout({
           src="https://platform.twitter.com/widgets.js"
           strategy="lazyOnload"
         />
+        {process.env.NODE_ENV === 'development' && <Agentation />}
       </body>
     </html>
   )
