@@ -17,18 +17,24 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
 
-    await signIn.email(
+    console.log('[DEBUG] signIn started, baseURL:', process.env.NEXT_PUBLIC_APP_URL)
+
+    const result = await signIn.email(
       { email, password },
       {
         onSuccess: () => {
+          console.log('[DEBUG] onSuccess called, redirecting to /admin')
           router.push('/admin')
         },
         onError: (ctx) => {
+          console.log('[DEBUG] onError called:', ctx.error)
           setError(ctx.error.message || 'Login failed')
           setLoading(false)
         },
       }
     )
+
+    console.log('[DEBUG] signIn.email result:', result)
   }
 
   return (

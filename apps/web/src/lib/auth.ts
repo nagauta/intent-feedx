@@ -3,6 +3,15 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { db } from '@/db'
 import * as schema from '@/db/schema'
 
+// Debug: log auth configuration on startup
+console.log('[AUTH CONFIG DEBUG]', {
+  BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
+  useSecureCookies: process.env.BETTER_AUTH_URL?.startsWith('https://') ?? false,
+  trustedOrigins: process.env.BETTER_AUTH_URL
+    ? [process.env.BETTER_AUTH_URL]
+    : ['http://localhost:3000'],
+})
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: 'pg',
