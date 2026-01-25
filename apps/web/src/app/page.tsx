@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { TweetFeed } from '@/components/TweetFeed'
+import { ContentFeed } from '@/components/ContentFeed'
 
 export default function Home() {
   return (
@@ -22,7 +22,7 @@ export default function Home() {
           </svg>
         </Link>
       </header>
-      <TweetFeed />
+      <ContentFeed />
     </main>
   )
 }
