@@ -231,8 +231,9 @@ export default function AdminPage() {
         )
 
         try {
+          const searchQuery = buildSearchQuery(keyword.query)
           const params = new URLSearchParams({
-            keyword: keyword.query,
+            keyword: searchQuery,
             sourceType,
           })
           const res = await fetch(`/api/search?${params.toString()}`)
