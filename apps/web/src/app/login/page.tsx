@@ -17,25 +17,19 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
 
-    console.log('[DEBUG] signIn started, baseURL:', process.env.NEXT_PUBLIC_APP_URL)
-
-    const result = await signIn.email(
+    await signIn.email(
       { email, password },
       {
         onSuccess: () => {
-          console.log('[DEBUG] onSuccess called, redirecting to /admin')
           // Use full page reload to ensure cookies are sent with request
           window.location.href = '/admin'
         },
         onError: (ctx) => {
-          console.log('[DEBUG] onError called:', ctx.error)
           setError(ctx.error.message || 'Login failed')
           setLoading(false)
         },
       }
     )
-
-    console.log('[DEBUG] signIn.email result:', result)
   }
 
   return (
