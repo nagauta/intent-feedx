@@ -29,8 +29,9 @@ async function fetchTwitterOEmbed(tweetUrl: string): Promise<OEmbedResponse | nu
 export class TwitterSourceAdapter implements ContentSourceAdapter {
   readonly type = 'twitter' as const
 
-  buildSearchQuery(keyword: string, afterDate: string): string {
-    return `site:x.com "${keyword}" after:${afterDate}`
+  buildSearchQuery(keyword: string, _afterDate: string): string {
+    // キーワードをそのまま使用（検索演算子はキーワード側で指定）
+    return keyword
   }
 
   extractContents(response: SerpApiResponse): BasicContent[] {

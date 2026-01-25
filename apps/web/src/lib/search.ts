@@ -171,8 +171,9 @@ async function fetchOEmbed(tweetUrl: string): Promise<OEmbedResponse | null> {
   }
 }
 
-function buildSearchQuery(keyword: string, afterDate: string): string {
-  return `site:x.com "${keyword}" after:${afterDate}`
+function buildSearchQuery(keyword: string, _afterDate: string): string {
+  // キーワードをそのまま使用（検索演算子はキーワード側で指定）
+  return keyword
 }
 
 interface BasicTweet {

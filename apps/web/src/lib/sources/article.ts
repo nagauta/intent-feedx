@@ -5,9 +5,9 @@ import { fetchOGP } from '../ogp'
 export class ArticleSourceAdapter implements ContentSourceAdapter {
   readonly type = 'article' as const
 
-  buildSearchQuery(keyword: string, afterDate: string): string {
-    // Twitterを除外した一般記事検索
-    return `"${keyword}" after:${afterDate} -site:x.com -site:twitter.com`
+  buildSearchQuery(keyword: string, _afterDate: string): string {
+    // キーワードをそのまま使用（検索演算子はキーワード側で指定）
+    return keyword
   }
 
   extractContents(response: SerpApiResponse): BasicContent[] {
