@@ -24,7 +24,8 @@ export default function LoginPage() {
       {
         onSuccess: () => {
           console.log('[DEBUG] onSuccess called, redirecting to /admin')
-          router.push('/admin')
+          // Use full page reload to ensure cookies are sent with request
+          window.location.href = '/admin'
         },
         onError: (ctx) => {
           console.log('[DEBUG] onError called:', ctx.error)
