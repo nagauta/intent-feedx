@@ -78,6 +78,9 @@ async function searchSerp(query: string): Promise<SerpApiResponse> {
     engine: 'google',
     q: query,
     num: '20',
+    gl: 'jp',
+    hl: 'ja',
+    google_domain: 'google.co.jp',
   })
 
   const url = `https://serpapi.com/search?${params.toString()}`
