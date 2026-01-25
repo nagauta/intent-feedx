@@ -26,3 +26,6 @@ export type Keyword = typeof keywords.$inferSelect
 export type NewKeyword = typeof keywords.$inferInsert
 export type Tweet = typeof tweets.$inferSelect
 export type NewTweet = typeof tweets.$inferInsert
+
+// Auth schema
+export * from './auth-schema'
