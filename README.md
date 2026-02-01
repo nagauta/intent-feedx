@@ -1,16 +1,18 @@
 # Intent FeedX
 
-X.com（旧Twitter）から特定キーワードに関連するツイートを検索・収集するツールです。
+コミュニティ運営のための自動情報収集システム。SERP API経由でX.com（Twitter）の投稿や記事を検索・収集し、PostgreSQLに保存、Webアプリで閲覧します。
 
-## 📋 技術スタック
+## 技術スタック
 
-- **フロントエンド**: Next.js 15 + React 19 + TypeScript
+- **フロントエンド**: Next.js 15 + React 19 + TypeScript + SWR
 - **バックエンド**: Next.js API Routes
+- **データベース**: PostgreSQL (Vercel Postgres) + Drizzle ORM
+- **認証**: Better Auth
 - **ランタイム**: Bun
 - **モノレポ**: Turborepo
-- **検索API**: SERP API (Google Search)
+- **検索API**: SERP API (Google Search) + Twitter oEmbed API
 
-## 🚀 セットアップ
+## セットアップ
 
 ### 1. 依存関係のインストール
 
@@ -18,102 +20,98 @@ X.com（旧Twitter）から特定キーワードに関連するツイートを�
 bun install
 ```
 
-### 2. 環境変数の設定
+### 2. PostgreSQL起動
 
-`.env.local` ファイルを `apps/web/` に作成し、SERP API キーを設定してください：
+```bash
+docker-compose up -d
+```
+
+### 3. 環境変数の設定
+
+```bash
+cp apps/web/.env.sample apps/web/.env.local
+```
+
+`.env.local` に以下を設定：
 
 ```bash
 SERP_API_KEY=your_serp_api_key_here
+DATABASE_URL=postgres://...
 ```
 
-## 📖 使い方
-
-### スクリプトで検索を実行
-
-コマンドラインから直接検索を実行できます：
+### 4. データベースセットアップ
 
 ```bash
-# 基本的な使い方
-bun run search "Next.js"
-
-# 別のキーワードで検索
-bun run search "React 19"
+bun run db:push    # スキーマをDBに反映
+bun run db:seed    # シードデータ投入（任意）
 ```
 
-実行すると：
-- コンソールに検索結果が表示されます
-- `data/twitter-results-YYYY-MM-DD.json` にJSON形式で保存されます
+## 使い方
 
-### Web UIで検索を実行
-
-開発サーバーを起動：
+### Web UI
 
 ```bash
 bun run dev
 ```
 
-ブラウザで以下のURLにアクセス：
-- Web UI: `http://localhost:3000`
-- API エンドポイント:
-  - `http://localhost:3000/api` - API情報
-  - `http://localhost:3000/api/health` - ヘルスチェック
-  - `http://localhost:3000/api/search?keyword=Next.js` - 検索API
+- **フィード画面**: `http://localhost:3000` - 収集したコンテンツ一覧
+- **管理画面**: `http://localhost:3000/admin` - キーワード管理・検索実行
 
-## 📁 プロジェクト構造
+### コマンドラインで検索
+
+```bash
+bun run search "Next.js"
+```
+
+### API エンドポイント
+
+| エンドポイント | 説明 |
+|---------------|------|
+| `GET /api/contents` | コンテンツ一覧取得 |
+| `GET /api/keywords` | キーワード一覧取得 |
+| `GET /api/search?keyword=...` | 検索実行 |
+| `GET /api/health` | ヘルスチェック |
+
+## プロジェクト構造
 
 ```
 intent-feedx/
 ├── apps/
-│   └── web/               # Next.js アプリケーション
+│   └── web/                    # Next.js フルスタックアプリ
 │       ├── src/
-│       │   ├── app/       # App Router
-│       │   │   ├── api/   # API Routes
-│       │   │   │   ├── route.ts       # GET /api
-│       │   │   │   ├── health/        # GET /api/health
-│       │   │   │   └── search/        # GET /api/search
-│       │   │   ├── layout.tsx
-│       │   │   └── page.tsx
-│       │   └── lib/       # 共通ロジック
-│       │       ├── search.ts         # SERP API統合
-│       │       └── file-storage.ts   # ファイル保存
-│       └── package.json
-├── scripts/
-│   └── search.ts          # スタンドアロン検索スクリプト
-├── data/                  # 検索結果の保存先
+│       │   ├── app/            # App Router
+│       │   │   ├── api/        # API Routes
+│       │   │   │   ├── auth/   # 認証API
+│       │   │   │   ├── contents/
+│       │   │   │   ├── keywords/
+│       │   │   │   └── search/
+│       │   │   ├── admin/      # 管理画面
+│       │   │   └── page.tsx    # フィード画面
+│       │   ├── components/     # Reactコンポーネント
+│       │   ├── db/             # Drizzle ORM スキーマ・クライアント
+│       │   └── lib/            # ビジネスロジック
+│       │       ├── search.ts   # 検索ロジック
+│       │       └── sources/    # ソースアダプター
+│       │           ├── twitter.ts
+│       │           └── article.ts
+│       └── public/             # 静的ファイル
+├── packages/
+│   └── shared/                 # 共有TypeScript型定義
+│       └── src/index.ts        # Content, Keyword, ContentSourceType など
 └── package.json
 ```
 
-## 🔍 検索の仕組み
+## データフロー
 
-1. **SERP API経由でGoogle検索を実行**
-   - クエリ形式: `site:x.com "キーワード" after:昨日の日付`
-   - 昨日以降のツイートを検索
+1. **キーワード設定** - DB `keywords` テーブルに検索キーワードを登録
+2. **SERP API検索** - `site:x.com "キーワード" after:日付` 形式で検索
+3. **ソースアダプターで処理**
+   - Twitter: oEmbed APIで埋め込みHTML取得
+   - Article: OGPメタデータ取得
+4. **PostgreSQL保存** - `contents` テーブルに保存
+5. **Web UIで閲覧** - フィード画面・管理画面で確認
 
-2. **検索結果を解析**
-   - X.comのURLのみを抽出
-   - タイトル、URL、スニペットを取得
-
-3. **結果を保存**
-   - JSON形式で `data/twitter-results-YYYY-MM-DD.json` に保存
-   - 同日の検索は同じファイルに追記
-
-## 📊 スプリント進捗
-
-- ✅ **スプリント1**: 最小限の検索実装（完了）
-  - SERP API統合
-  - 1キーワードでの検索
-  - JSON保存機能
-  - スクリプト実行機能
-
-- ⏳ **スプリント2**: Twitter oEmbed統合（未実装）
-- ⏳ **スプリント3**: 複数キーワード対応（未実装）
-- ⏳ **スプリント4**: 重複チェック機能（未実装）
-- ⏳ **スプリント5**: 基本的なWeb表示（未実装）
-- ⏳ **スプリント6**: フィルタリング機能（未実装）
-
-詳細は [docs/todo.md](./docs/todo.md) を参照してください。
-
-## 🛠️ 開発コマンド
+## 開発コマンド
 
 ```bash
 # 開発サーバー起動
@@ -122,16 +120,27 @@ bun run dev
 # ビルド
 bun run build
 
-# 本番サーバー起動
-bun run start
-
 # Lint
 bun run lint
 
-# 検索スクリプト実行
+# データベース操作
+bun run db:push      # スキーマをDBに反映
+bun run db:studio    # Drizzle Studio起動（DBブラウザ）
+bun run db:seed      # シードデータ投入
+bun run db:generate  # マイグレーションファイル生成
+bun run db:migrate   # マイグレーション実行
+
+# 検索スクリプト
 bun run search "キーワード"
 ```
 
-## 📝 ライセンス
+## コミット規約
+
+Conventional Commits形式：`<type>(<scope>): <subject>`
+
+- **Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
+- **Scopes**: `backend`, `frontend`, `api`, `config`, `deps`
+
+## ライセンス
 
 Private
