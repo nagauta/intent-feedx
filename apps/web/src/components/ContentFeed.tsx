@@ -3,7 +3,9 @@
 import { useEffect, useRef, useCallback } from 'react'
 import useSWRInfinite from 'swr/infinite'
 import type { Content } from '@intent-feedx/shared'
+import { useSession } from '@/lib/auth-client'
 import { ContentCard } from './ContentCard'
+import { SwipeToDelete } from './SwipeToDelete'
 
 interface ContentsResponse {
   contents: Content[]
@@ -14,6 +16,9 @@ interface ContentsResponse {
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 export function ContentFeed() {
+  const { data: session } = useSession()
+  const isLoggedIn = !!session?.user
+
   const getKey = useCallback(
     (pageIndex: number, previousPageData: ContentsResponse | null) => {
       if (previousPageData && !previousPageData.hasMore) return null
@@ -22,7 +27,7 @@ export function ContentFeed() {
     []
   )
 
-  const { data, error, size, setSize, isLoading, isValidating } = useSWRInfinite<ContentsResponse>(
+  const { data, error, size, setSize, isLoading, isValidating, mutate } = useSWRInfinite<ContentsResponse>(
     getKey,
     fetcher
   )
@@ -38,6 +43,18 @@ export function ContentFeed() {
       setSize(size + 1)
     }
   }, [isLoadingMore, hasMore, setSize, size])
+
+  const handleDelete = useCallback(
+    async (url: string) => {
+      try {
+        await fetch(`/api/contents?url=${encodeURIComponent(url)}`, { method: 'DELETE' })
+        mutate()
+      } catch (error) {
+        console.error('Failed to delete content:', error)
+      }
+    },
+    [mutate]
+  )
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -70,9 +87,15 @@ export function ContentFeed() {
         <div className="empty">コンテンツがありません</div>
       ) : (
         <div className="content-list">
-          {contents.map((content) => (
-            <ContentCard key={content.url} content={content} />
-          ))}
+          {contents.map((content) =>
+            isLoggedIn ? (
+              <SwipeToDelete key={content.url} onDelete={() => handleDelete(content.url)}>
+                <ContentCard content={content} />
+              </SwipeToDelete>
+            ) : (
+              <ContentCard key={content.url} content={content} />
+            )
+          )}
         </div>
       )}
 

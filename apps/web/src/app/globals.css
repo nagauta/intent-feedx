@@ -666,6 +666,34 @@ body {
 }
 
 
+.swipe-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-action {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e0245e;
+  color: #fff;
+  font-weight: bold;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.swipe-content {
+  position: relative;
+  background: #fff;
+  transition: transform 0.15s ease-out;
+  user-select: none;
+}
+
 .content-list {
   display: flex;
   flex-direction: column;
