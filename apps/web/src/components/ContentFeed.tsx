@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import useSWRInfinite from 'swr/infinite'
-import type { Content, ContentSourceType } from '@intent-feedx/shared'
+import type { Content } from '@intent-feedx/shared'
+import { useSession } from '@/lib/auth-client'
 import { ContentCard } from './ContentCard'
+import { SwipeToDelete } from './SwipeToDelete'
 
 interface ContentsResponse {
   contents: Content[]
@@ -13,24 +15,16 @@ interface ContentsResponse {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
-interface ContentFeedProps {
-  sourceType?: ContentSourceType
-  showSourceFilter?: boolean
-}
-
-export function ContentFeed({ sourceType, showSourceFilter = true }: ContentFeedProps) {
-  const [activeSource, setActiveSource] = useState<ContentSourceType | 'all'>(sourceType || 'all')
+export function ContentFeed() {
+  const { data: session } = useSession()
+  const isLoggedIn = !!session?.user
 
   const getKey = useCallback(
     (pageIndex: number, previousPageData: ContentsResponse | null) => {
       if (previousPageData && !previousPageData.hasMore) return null
-      const params = new URLSearchParams({ page: String(pageIndex) })
-      if (activeSource !== 'all') {
-        params.set('sourceType', activeSource)
-      }
-      return `/api/contents?${params.toString()}`
+      return `/api/contents?page=${pageIndex}`
     },
-    [activeSource]
+    []
   )
 
   const { data, error, size, setSize, isLoading, isValidating, mutate } = useSWRInfinite<ContentsResponse>(
@@ -50,10 +44,17 @@ export function ContentFeed({ sourceType, showSourceFilter = true }: ContentFeed
     }
   }, [isLoadingMore, hasMore, setSize, size])
 
-  // ソースタイプが変更されたらリセット
-  useEffect(() => {
-    mutate()
-  }, [activeSource, mutate])
+  const handleDelete = useCallback(
+    async (url: string) => {
+      try {
+        await fetch(`/api/contents?url=${encodeURIComponent(url)}`, { method: 'DELETE' })
+        mutate()
+      } catch (error) {
+        console.error('Failed to delete content:', error)
+      }
+    },
+    [mutate]
+  )
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -82,36 +83,19 @@ export function ContentFeed({ sourceType, showSourceFilter = true }: ContentFeed
 
   return (
     <div className="content-feed">
-      {showSourceFilter && (
-        <div className="source-filter">
-          <button
-            className={`source-filter-btn ${activeSource === 'all' ? 'active' : ''}`}
-            onClick={() => setActiveSource('all')}
-          >
-            すべて
-          </button>
-          <button
-            className={`source-filter-btn ${activeSource === 'twitter' ? 'active' : ''}`}
-            onClick={() => setActiveSource('twitter')}
-          >
-            X (Twitter)
-          </button>
-          <button
-            className={`source-filter-btn ${activeSource === 'article' ? 'active' : ''}`}
-            onClick={() => setActiveSource('article')}
-          >
-            記事
-          </button>
-        </div>
-      )}
-
       {contents.length === 0 ? (
         <div className="empty">コンテンツがありません</div>
       ) : (
         <div className="content-list">
-          {contents.map((content) => (
-            <ContentCard key={content.url} content={content} />
-          ))}
+          {contents.map((content) =>
+            isLoggedIn ? (
+              <SwipeToDelete key={content.url} onDelete={() => handleDelete(content.url)}>
+                <ContentCard content={content} />
+              </SwipeToDelete>
+            ) : (
+              <ContentCard key={content.url} content={content} />
+            )
+          )}
         </div>
       )}
 

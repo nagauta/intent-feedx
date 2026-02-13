@@ -48,9 +48,7 @@ export default function AdminPage() {
   const [searchStatuses, setSearchStatuses] = useState<SearchStatus[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [todayOnly, setTodayOnly] = useState(true)
-  const [savedContents, setSavedContents] = useState<SavedContent[]>([])
   const [deletedContents, setDeletedContents] = useState<SavedContent[]>([])
-  const [showDeleted, setShowDeleted] = useState(false)
   const [selectedSources, setSelectedSources] = useState<ContentSourceType[]>(['twitter', 'article'])
 
   // キーワード一覧取得
@@ -71,29 +69,14 @@ export default function AdminPage() {
     }
   }
 
-  // コンテンツ一覧取得
+  // 削除済みコンテンツ取得
   const fetchContents = async () => {
     try {
-      const [activeRes, deletedRes] = await Promise.all([
-        fetch('/api/contents'),
-        fetch('/api/contents?deleted=true'),
-      ])
-      const activeData = await activeRes.json()
-      const deletedData = await deletedRes.json()
-      setSavedContents(activeData.contents || [])
-      setDeletedContents(deletedData.contents || [])
+      const res = await fetch('/api/contents?deleted=true')
+      const data = await res.json()
+      setDeletedContents(data.contents || [])
     } catch (error) {
       console.error('Failed to fetch contents:', error)
-    }
-  }
-
-  // コンテンツ削除
-  const handleDeleteContent = async (url: string) => {
-    try {
-      await fetch(`/api/contents?url=${encodeURIComponent(url)}`, { method: 'DELETE' })
-      fetchContents()
-    } catch (error) {
-      console.error('Failed to delete content:', error)
     }
   }
 
@@ -422,26 +405,14 @@ export default function AdminPage() {
         )}
       </section>
 
-      {/* 保存済みコンテンツ一覧 */}
+      {/* 削除済みコンテンツ一覧 */}
       <section className="admin-section">
-        <div className="section-header">
-          <h2>保存済みコンテンツ ({showDeleted ? deletedContents.length : savedContents.length}件)</h2>
-          <label className="today-filter">
-            <input
-              type="checkbox"
-              checked={showDeleted}
-              onChange={(e) => setShowDeleted(e.target.checked)}
-            />
-            削除済みを表示
-          </label>
-        </div>
-        {(showDeleted ? deletedContents : savedContents).length === 0 ? (
-          <p className="empty-message">
-            {showDeleted ? '削除済みコンテンツはありません' : '保存済みコンテンツはありません'}
-          </p>
+        <h2>削除済みコンテンツ ({deletedContents.length}件)</h2>
+        {deletedContents.length === 0 ? (
+          <p className="empty-message">削除済みコンテンツはありません</p>
         ) : (
           <ul className="saved-tweet-list">
-            {(showDeleted ? deletedContents : savedContents).map((content) => (
+            {deletedContents.map((content) => (
               <li key={content.url} className="saved-tweet-item">
                 <div className="saved-tweet-content">
                   <div className="content-header">
@@ -459,21 +430,12 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div className="saved-tweet-actions">
-                  {showDeleted ? (
-                    <button
-                      className="restore-btn"
-                      onClick={() => handleRestoreContent(content.url)}
-                    >
-                      復元
-                    </button>
-                  ) : (
-                    <button
-                      className="delete-btn"
-                      onClick={() => handleDeleteContent(content.url)}
-                    >
-                      削除
-                    </button>
-                  )}
+                  <button
+                    className="restore-btn"
+                    onClick={() => handleRestoreContent(content.url)}
+                  >
+                    復元
+                  </button>
                 </div>
               </li>
             ))}
