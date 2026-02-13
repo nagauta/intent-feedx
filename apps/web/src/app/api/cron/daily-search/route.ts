@@ -4,6 +4,17 @@ import { loadEnabledKeywords } from '@/lib/keywords'
 import { searchContent } from '@/lib/search'
 import { saveContentSearchResult, loadExistingContentUrls } from '@/lib/file-storage'
 
+function getTodayFilter(): string {
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(today.getDate() + 1)
+
+  const fmt = (d: Date) => d.toISOString().split('T')[0]
+  return `after:${fmt(yesterday)} before:${fmt(tomorrow)}`
+}
+
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -17,16 +28,17 @@ export async function GET(request: Request) {
     }
 
     const existingUrls = await loadExistingContentUrls()
+    const todayFilter = getTodayFilter()
     const results: { keyword: string; sourceType: string; retrieved: number; saved: number }[] = []
 
     for (const keyword of keywords) {
       const sourceTypes = keyword.sources as ContentSourceType[]
+      const queryWithDate = `${keyword.query} ${todayFilter}`
 
       for (const sourceType of sourceTypes) {
-        const searchResult = await searchContent(keyword.query, sourceType, { existingUrls })
+        const searchResult = await searchContent(queryWithDate, sourceType, { existingUrls })
         const savedCount = await saveContentSearchResult(searchResult)
 
-        // 保存されたURLを既存セットに追加（次のキーワード検索での重複防止）
         for (const content of searchResult.contents) {
           existingUrls.add(content.url)
         }
