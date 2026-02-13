@@ -1,12 +1,12 @@
 # プロジェクト仕様書
 
-## 📌 プロジェクト概要
+## プロジェクト概要
 
 コミュニティ運営のための自動情報収集システム。
 手動検索のコストを削減し、おすすめアルゴリズムに頼らず能動的にユーザーの声を収集。
 収集したデータを意思決定やプロモーション活動に活用する。
 
-## 🎯 課題と目的
+## 課題と目的
 
 ### 課題
 - コミュニティ運営において、ユーザーの声を拾うために手動でX検索やGoogle検索を定期的に実施している
@@ -21,151 +21,93 @@
   - 問題点への対応やコミュニティアクション
 - プロモーション活動へのデータ活用
 
-## ✅ やること（スコープ内）
+## 機能
 
-### 1. 検索・収集機能
-- [x] 複数キーワードの設定ファイル管理（`config/keywords.json`）
-- [x] キーワードごとに日時指定での自動検索
-- [x] SERP API経由でGoogle検索結果を取得
-  - X.com検索も含む（`site:x.com "キーワード" after:YYYY-MM-DD`形式）
-- [x] 検索結果をJSON形式で保存
-- [x] Twitter oEmbed APIで埋め込みHTML取得
-- [x] 重複URL（同じツイート）の自動スキップ
+### 検索・収集
+- 複数キーワードの管理（DB `keywords` テーブル）
+- キーワードごとに日時指定での自動検索
+- SERP API経由でGoogle検索結果を取得（`site:x.com "キーワード" after:YYYY-MM-DD` 形式）
+- ソースアダプターによるマルチソース対応（Twitter / Article）
+- Twitter oEmbed APIで埋め込みHTML取得
+- Article: OGPメタデータ（サイト名、favicon、ogType）取得
+- 重複URL の自動スキップ
 
-### 2. UI機能
-- [x] Webアプリで収集データを閲覧
-- [x] Twitterフィード風の表示
-- [ ] 収集データの検索機能
-  - キーワードでフィルタ
-  - 日付でフィルタ
+### UI
+- Webアプリで収集データを閲覧
+- Twitterフィード風の表示
+- 管理画面（`/admin`）での閲覧・管理
+- PWA対応
 
-### 3. データ管理
-- [ ] JSON形式でデータ保存（全履歴保持）
-- [ ] 日付別ファイル管理（`twitter-results-YYYY-MM-DD.json`）
+### 認証
+- Better Auth によるユーザー認証
 
-### 4. 実行方式
-- [ ] 手動実行（`npm start`など）
-
-## ❌ やらないこと（スコープ外）
+## スコープ外
 
 明確にスコープ外として実装しない機能：
 
-1. **意思決定支援UI**
-   - データ分析機能
-   - 統計・集計ダッシュボード
-   - データ可視化（グラフ・チャート）
-   - レポート生成
+- **意思決定支援UI** — 統計・集計ダッシュボード、データ可視化、レポート生成
+- **自動投稿** — X（Twitter）や他SNSへの自動投稿
+- **通知** — Slack / メール / Webhook
+- **定期自動実行** — cron / スケジューラー / バックグラウンド実行
+- **X.com以外のSNS検索** — Facebook、Instagram、LinkedIn等
 
-2. **自動投稿機能**
-   - X（Twitter）への自動投稿
-   - 他SNSへの自動投稿
+## 技術スタック
 
-3. **通知機能**
-   - Slack通知
-   - メール通知
-   - Webhook連携
+| カテゴリ | 技術 |
+|----------|------|
+| フレームワーク | Next.js 15 (App Router) + React 19 |
+| データフェッチ | SWR |
+| ORM | Drizzle ORM |
+| データベース | PostgreSQL (Vercel Postgres) |
+| 認証 | Better Auth |
+| 外部API | SERP API, Twitter oEmbed API |
+| モノレポ | Turborepo |
+| ランタイム | Bun |
 
-4. **高度なデータ管理**
-   - データベース（PostgreSQL、MySQLなど）
-   - データの定期削除・アーカイブ
-   - データのエクスポート機能
+## データ構造
 
-5. **自動実行機能**
-   - cron設定
-   - スケジューラー
-   - バックグラウンド実行
+### keywords テーブル
 
-6. **X.com以外の検索**
-   - 他SNS（Facebook、Instagram、LinkedIn等）の検索
-   - ブログやニュースサイトの専用検索
+| カラム | 型 | 説明 |
+|--------|-----|------|
+| id | serial | PK |
+| slug | text | ユニークスラッグ |
+| query | text | 検索クエリ |
+| enabled | boolean | 有効/無効 |
+| sources | text[] | ソース種別 (`twitter`, `article`) |
+| created_at | timestamp | 作成日時 |
 
-## 🛠 技術スタック
+### contents テーブル
 
-### バックエンド
-- Hono.js
-- SERP API（Google検索）
-- Twitter oEmbed API（埋め込みHTML取得）
+| カラム | 型 | 説明 |
+|--------|-----|------|
+| id | serial | PK |
+| url | text | コンテンツURL（ユニーク） |
+| source_type | text | `twitter` \| `article` |
+| title | text | タイトル |
+| snippet | text | 概要テキスト |
+| author_name | text | 著者名 |
+| published_at | timestamp | 公開日時 |
+| thumbnail_url | text | サムネイルURL |
+| source_metadata | jsonb | ソース固有データ |
+| keyword | text | 検索キーワード |
+| search_date | text | 検索日 |
+| created_at | timestamp | 作成日時 |
+| deleted_at | timestamp | 論理削除日時 |
 
-### フロントエンド
-- Next.js
+### ソース固有メタデータ（source_metadata）
 
-### データ保存
-- JSONファイル形式
-
-### 実行環境
-- ローカル実行（手動）
-
-## 📁 データ構造
-
-### キーワード設定ファイル（例: `keywords.json`）
+**Twitter:**
 ```json
-{
-  "keywords": [
-    {
-      "id": "raycast",
-      "query": "Raycast",
-      "enabled": true
-    },
-    {
-      "id": "community-tools",
-      "query": "コミュニティツール",
-      "enabled": true
-    }
-  ]
-}
+{ "embedHtml": "<blockquote>...</blockquote>", "embedSuccess": true }
 ```
 
-### 検索結果ファイル（例: `twitter-results-YYYY-MM-DD.json`）
+**Article:**
 ```json
-{
-  "searchQuery": "site:x.com \"Raycast\" after:2026-01-21",
-  "searchDate": "2026-01-21",
-  "keyword": "Raycast",
-  "totalResults": 5,
-  "retrievedCount": 3,
-  "generatedAt": "2026-01-21T17:22:01.571Z",
-  "tweets": [
-    {
-      "url": "https://x.com/user/status/123",
-      "title": "ツイートタイトル",
-      "snippet": "概要テキスト",
-      "embedSuccess": true,
-      "embedHtml": "<blockquote>...</blockquote>",
-      "authorName": "ユーザー名"
-    }
-  ]
-}
+{ "siteName": "Example", "favicon": "https://...", "ogType": "article" }
 ```
-
-## 🔄 データフロー
-
-1. ユーザーが手動で実行（`npm start`）
-2. `keywords.json`から有効なキーワードを読み込み
-3. 各キーワードについて：
-   - SERP APIでGoogle検索実行（`site:x.com "キーワード" after:日付`）
-   - 検索結果を取得
-   - 各ツイートURLについて：
-     - 既存JSONに同じURLが存在するかチェック
-     - 存在しない場合のみTwitter oEmbed APIで埋め込みHTML取得
-   - 結果を`twitter-results-YYYY-MM-DD.json`に保存
-4. Webアプリでデータを閲覧
-
-## 📝 重複チェックロジック
-
-- 同じURL（ツイートURL）が既に保存されている場合はスキップ
-- チェック対象：全てのJSONファイル内のツイートURL
-- 重複の場合：oEmbed API呼び出しをスキップし、処理をスキップ
-
-## 🚀 今後の拡張可能性（参考）
-
-スコープ外だが、将来的に検討可能な機能：
-- 自動実行（cron）
-- 通知機能
-- データ分析ダッシュボード
-- X以外のSNS対応
-- データベース化
 
 ---
 
-**最終更新**: 2026-01-22
-**バージョン**: 1.0.0
+**最終更新**: 2026-02-14
+**バージョン**: 2.0.0
