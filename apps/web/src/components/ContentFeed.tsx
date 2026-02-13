@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import useSWRInfinite from 'swr/infinite'
-import type { Content, ContentSourceType } from '@intent-feedx/shared'
+import type { Content } from '@intent-feedx/shared'
 import { ContentCard } from './ContentCard'
 
 interface ContentsResponse {
@@ -13,27 +13,16 @@ interface ContentsResponse {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
-interface ContentFeedProps {
-  sourceType?: ContentSourceType
-  showSourceFilter?: boolean
-}
-
-export function ContentFeed({ sourceType, showSourceFilter = true }: ContentFeedProps) {
-  const [activeSource, setActiveSource] = useState<ContentSourceType | 'all'>(sourceType || 'all')
-
+export function ContentFeed() {
   const getKey = useCallback(
     (pageIndex: number, previousPageData: ContentsResponse | null) => {
       if (previousPageData && !previousPageData.hasMore) return null
-      const params = new URLSearchParams({ page: String(pageIndex) })
-      if (activeSource !== 'all') {
-        params.set('sourceType', activeSource)
-      }
-      return `/api/contents?${params.toString()}`
+      return `/api/contents?page=${pageIndex}`
     },
-    [activeSource]
+    []
   )
 
-  const { data, error, size, setSize, isLoading, isValidating, mutate } = useSWRInfinite<ContentsResponse>(
+  const { data, error, size, setSize, isLoading, isValidating } = useSWRInfinite<ContentsResponse>(
     getKey,
     fetcher
   )
@@ -49,11 +38,6 @@ export function ContentFeed({ sourceType, showSourceFilter = true }: ContentFeed
       setSize(size + 1)
     }
   }, [isLoadingMore, hasMore, setSize, size])
-
-  // ソースタイプが変更されたらリセット
-  useEffect(() => {
-    mutate()
-  }, [activeSource, mutate])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -82,29 +66,6 @@ export function ContentFeed({ sourceType, showSourceFilter = true }: ContentFeed
 
   return (
     <div className="content-feed">
-      {showSourceFilter && (
-        <div className="source-filter">
-          <button
-            className={`source-filter-btn ${activeSource === 'all' ? 'active' : ''}`}
-            onClick={() => setActiveSource('all')}
-          >
-            すべて
-          </button>
-          <button
-            className={`source-filter-btn ${activeSource === 'twitter' ? 'active' : ''}`}
-            onClick={() => setActiveSource('twitter')}
-          >
-            X (Twitter)
-          </button>
-          <button
-            className={`source-filter-btn ${activeSource === 'article' ? 'active' : ''}`}
-            onClick={() => setActiveSource('article')}
-          >
-            記事
-          </button>
-        </div>
-      )}
-
       {contents.length === 0 ? (
         <div className="empty">コンテンツがありません</div>
       ) : (

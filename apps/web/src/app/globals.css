@@ -665,35 +665,6 @@ body {
   gap: 1rem;
 }
 
-.source-filter {
-  display: flex;
-  gap: 0.5rem;
-  background: #fff;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #e1e8ed;
-}
-
-.source-filter-btn {
-  padding: 0.5rem 1rem;
-  border: 1px solid #e1e8ed;
-  border-radius: 20px;
-  background: #fff;
-  color: #657786;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.source-filter-btn:hover {
-  background: #f5f8fa;
-}
-
-.source-filter-btn.active {
-  background: #1da1f2;
-  border-color: #1da1f2;
-  color: #fff;
-}
 
 .content-list {
   display: flex;
@@ -930,9 +901,7 @@ body {
     height: 160px;
   }
 
-  .source-filter {
-    flex-wrap: wrap;
-  }
+
 }
 
 /* ===========================================
