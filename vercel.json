@@ -3,5 +3,11 @@
   "buildCommand": "turbo build --filter=@intent-feedx/web",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
-  "installCommand": "bun install"
+  "installCommand": "bun install",
+  "crons": [
+    {
+      "path": "/api/cron/daily-search",
+      "schedule": "0 1 * * *"
+    }
+  ]
 }

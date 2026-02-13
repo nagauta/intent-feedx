@@ -5,6 +5,7 @@ export interface Keyword {
   id: string
   query: string
   enabled: boolean
+  sources: string[]
 }
 
 export async function loadKeywords(): Promise<Keyword[]> {
@@ -14,6 +15,7 @@ export async function loadKeywords(): Promise<Keyword[]> {
       id: row.slug,
       query: row.query,
       enabled: row.enabled,
+      sources: row.sources,
     }))
   } catch (error) {
     console.error('Failed to load keywords from DB:', error)
@@ -28,6 +30,7 @@ export async function loadEnabledKeywords(): Promise<Keyword[]> {
       id: row.slug,
       query: row.query,
       enabled: row.enabled,
+      sources: row.sources,
     }))
   } catch (error) {
     console.error('Failed to load enabled keywords from DB:', error)
