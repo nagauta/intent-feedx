@@ -7,7 +7,7 @@
 ## Commands
 
 ```bash
-# 開発サーバー起動 (web: 3000, workflow: 3001)
+# 開発サーバー起動 (port 3000)
 bun run dev
 
 # ビルド
@@ -31,8 +31,7 @@ bun run search "keyword"
 
 Turborepoモノレポ（`apps/*`, `packages/*`）。各アプリの詳細は配下の CLAUDE.md を参照。
 
-- `apps/web` — Next.js 15 フルスタックアプリ（検索・閲覧・管理）
-- `apps/workflow` — Vercel Workflow による定期スクリーンショット撮影
+- `apps/web` — Next.js 16 フルスタックアプリ（検索・閲覧・管理 + Vercel Workflow）
 - `packages/shared` — 共有TypeScript型定義
 
 詳細な仕様は @docs/spec.md を参照。
@@ -42,7 +41,6 @@ Turborepoモノレポ（`apps/*`, `packages/*`）。各アプリの詳細は配�
 ```bash
 docker-compose up -d              # PostgreSQL起動
 cp apps/web/.env.sample apps/web/.env.local
-cp apps/workflow/.env.sample apps/workflow/.env.local
 # .env.localにSERP_API_KEY, BROWSERLESS_API_TOKEN等を設定
 bun install && bun run dev
 ```

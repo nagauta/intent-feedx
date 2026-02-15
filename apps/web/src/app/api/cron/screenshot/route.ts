@@ -12,8 +12,10 @@ export async function GET(request: Request) {
     await start(screenshotWorkflow, [])
     return NextResponse.json({ message: 'Screenshot workflow started' })
   } catch (error) {
-    console.error('[cron] Failed to start screenshot workflow:', error)
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: 'Failed to start workflow', details: message }, { status: 500 })
+    console.error('Screenshot workflow error:', error)
+    return NextResponse.json(
+      { error: 'Failed to start screenshot workflow' },
+      { status: 500 },
+    )
   }
 }

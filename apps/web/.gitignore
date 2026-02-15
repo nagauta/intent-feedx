@@ -1,3 +1,5 @@
+screenshots/
+
 # Data files (keep directory structure)
 data/*.json
 !data/.gitkeep

@@ -20,11 +20,13 @@
     "better-auth": "^1.4.17",
     "dayjs": "^1.11.19",
     "drizzle-orm": "^0.45.1",
-    "next": "^15",
+    "next": "^16",
     "postgres": "^3.4.8",
     "react": "^19",
     "react-dom": "^19",
-    "swr": "^2.3.8"
+    "swr": "^2.3.8",
+    "@vercel/blob": "^0.27.0",
+    "workflow": "4.1.0-beta.57"
   },
   "devDependencies": {
     "@types/node": "^22",
@@ -32,8 +34,8 @@
     "@types/react-dom": "^19",
     "dotenv": "^17.2.3",
     "drizzle-kit": "^0.31.8",
-    "eslint": "^8",
-    "eslint-config-next": "15",
+    "eslint": "^9",
+    "eslint-config-next": "16",
     "typescript": "^5"
   }
 }

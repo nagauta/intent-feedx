@@ -1,22 +1,21 @@
 # スクリーンショット Workflow リリース手順
 
 ## 前提条件
-- [ ] Vercel に `apps/workflow` 用の新規プロジェクトを作成済み
 - [ ] browserless.io アカウントがある
 - [ ] Vercel Blob ストレージが有効化済み
+- [ ] `apps/web` の Vercel プロジェクトが存在する（既存）
 
 ---
 
-## 1. Vercel プロジェクト作成
+## 背景
 
-1. Vercel ダッシュボード → Add New → Project
-2. 同じ GitHub リポジトリを選択
-3. Root Directory を `apps/workflow` に設定
-4. Framework Preset: Next.js
+当初 `apps/workflow` を別 Vercel プロジェクトとして実装していたが、Vercel Workflow DevKit の partial adoption が可能であることを検証し、既存の `apps/web` に統合した（PR #7）。これにより別プロジェクトの管理が不要になった。
 
 ---
 
-## 2. 環境変数の設定
+## 1. 環境変数の追加
+
+既存の `apps/web` Vercel プロジェクトに以下を追加:
 
 Vercel ダッシュボード → Settings → Environment Variables:
 
@@ -24,46 +23,39 @@ Vercel ダッシュボード → Settings → Environment Variables:
 |--------|-----|------|
 | `BROWSERLESS_API_TOKEN` | browserless.io のダッシュボードから取得 | Production |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob 連携で自動設定、または手動取得 | Production |
-| `CRON_SECRET` | `openssl rand -base64 32` で生成 | Production |
 
 ```bash
+# CRON_SECRET は既存の daily-search 用に設定済みのはず
+# 未設定の場合:
 openssl rand -base64 32
 ```
 
 ---
 
-## 3. デプロイ
+## 2. デプロイ
 
-PR マージで自動デプロイ、または手動:
-
-```bash
-vercel --prod
-```
+PR #7 をマージで自動デプロイ。
 
 ---
 
-## 4. デプロイ後の確認
+## 3. デプロイ後の確認
 
 ### チェックリスト
 
-- [ ] **ヘルスチェック**
-  ```bash
-  curl https://your-workflow-domain.vercel.app/api/health
-  ```
-  → `{ "status": "ok" }` が返ればOK
-
 - [ ] **Cron Job が登録されている**
-  - Vercel ダッシュボード → Settings → Cron Jobs に `/api/cron/screenshot` (`0 * * * *`) が表示される
+  - Vercel ダッシュボード → Settings → Cron Jobs に以下2つが表示される:
+    - `/api/cron/daily-search` (`0 1 * * *`) — 既存
+    - `/api/cron/screenshot` (`0 * * * *`) — 新規
 
 - [ ] **手動テスト実行**
   ```bash
-  curl -H "Authorization: Bearer $CRON_SECRET" https://your-workflow-domain.vercel.app/api/cron/screenshot
+  curl -H "Authorization: Bearer $CRON_SECRET" https://your-domain.vercel.app/api/cron/screenshot
   ```
   → `{ "message": "Screenshot workflow started" }` が返ればOK
 
 - [ ] **認証チェック**
   ```bash
-  curl https://your-workflow-domain.vercel.app/api/cron/screenshot
+  curl https://your-domain.vercel.app/api/cron/screenshot
   ```
   → `{ "error": "Unauthorized" }` (401) が返ればOK
 
@@ -72,6 +64,24 @@ vercel --prod
 
 - [ ] **Workflow 実行確認**
   - Vercel ダッシュボード → AI → Workflows で実行履歴を確認
+
+- [ ] **既存機能への影響なし**
+  - `/api/cron/daily-search`, `/api/contents`, `/api/keywords` 等が正常に動作するか確認
+
+---
+
+## アーキテクチャ
+
+```
+apps/web/
+  src/workflows/screenshot.ts    # 'use workflow' — ワークフロー定義
+  src/lib/browserless.ts         # 'use step' — スクリーンショット撮影
+  src/lib/storage.ts             # 'use step' — Blob / ローカル保存
+  src/app/api/cron/screenshot/   # Cron エンドポイント (start() で起動)
+```
+
+- `withWorkflow()` で `next.config.ts` をラップ
+- `.well-known/workflow/v1/*` ルートはビルド時に自動生成
 
 ---
 
@@ -89,7 +99,14 @@ vercel --prod
 
 ### Cron を無効化する場合
 
-`apps/workflow/vercel.json` から `crons` を削除して再デプロイ。
+`vercel.json` から screenshot の cron エントリを削除して再デプロイ。
+
+### Workflow 自体を無効化する場合
+
+1. `apps/web/next.config.ts` の `withWorkflow()` ラップを外す
+2. `apps/web/src/workflows/`, `apps/web/src/lib/browserless.ts`, `apps/web/src/lib/storage.ts` を削除
+3. `apps/web/src/app/api/cron/screenshot/` を削除
+4. 再デプロイ
 
 ### デプロイのロールバック
 
@@ -116,3 +133,7 @@ vercel rollback
 ### スクリーンショットが空白
 - X.com は未ログイン状態だとフィードが表示されない（ログインウォール）
 - プロフィールヘッダー部分のみキャプチャされるのは正常動作
+
+### 既存ルートへの影響
+- `withWorkflow()` は既存の Next.js 設定をラップするだけで、非 workflow ルートには影響しない
+- ビルドログで既存ルートが全て出力されていることを確認
