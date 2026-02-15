@@ -6,12 +6,13 @@
 
 ## 2026-02
 
-- **Workflow アプリ追加（スクリーンショット定期撮影）**
-  - `apps/workflow` を新規追加
-  - Vercel Workflow DevKit で durable ワークフロー実装
+- **Workflow 統合（スクリーンショット定期撮影）**
+  - `apps/web` に Vercel Workflow DevKit を統合（partial adoption）
   - browserless.io v2 API で X.com アカウントページのスクリーンショット撮影
   - Vercel Blob（本番）/ ローカルファイル（開発）に保存
   - Vercel Cron で毎時0分に自動実行
+- **Next.js 16 + ESLint 9 移行**
+  - Next.js 15 → 16、ESLint 8 → 9（flat config）に移行
 
 ## 2025-01
 

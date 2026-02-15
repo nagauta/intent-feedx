@@ -55,7 +55,7 @@
 
 | カテゴリ | 技術 |
 |----------|------|
-| フレームワーク | Next.js 15 (App Router) + React 19 |
+| フレームワーク | Next.js 16 (App Router) + React 19 |
 | データフェッチ | SWR |
 | ORM | Drizzle ORM |
 | データベース | PostgreSQL (Vercel Postgres) |

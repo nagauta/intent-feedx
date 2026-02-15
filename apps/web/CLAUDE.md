@@ -1,12 +1,14 @@
 # apps/web
 
-Next.js 15 (App Router) + React 19 のフルスタックアプリ。
+Next.js 16 (App Router) + React 19 のフルスタックアプリ。
 
 ## 技術スタック
 - Drizzle ORM + PostgreSQL (Vercel Postgres)
 - Better Auth（認証）
 - SWR（データフェッチ）
 - SERP API + Twitter oEmbed API
+- Vercel Workflow DevKit（スクリーンショット定期撮影）
+- browserless.io v2 + Vercel Blob
 
 ## Data Flow
 1. キーワード設定（DB `keywords` テーブル）
