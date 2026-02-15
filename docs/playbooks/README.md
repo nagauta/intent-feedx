@@ -8,6 +8,7 @@
 |---|----------|------|--------|
 | 001 | [認証機能リリース](./001-auth-release.md) | Better Auth 認証のリリース手順 | 2026-01-25 |
 | 002 | [日次自動検索 Cron](./002-cron-daily-search.md) | Vercel Cron Job のリリース手順 | 2026-02-14 |
+| 003 | [スクリーンショット Workflow](./003-workflow-screenshot.md) | browserless.io + Vercel Workflow のリリース手順 | 2026-02-15 |
 
 ---
 

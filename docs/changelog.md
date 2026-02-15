@@ -4,6 +4,15 @@
 
 ---
 
+## 2026-02
+
+- **Workflow アプリ追加（スクリーンショット定期撮影）**
+  - `apps/workflow` を新規追加
+  - Vercel Workflow DevKit で durable ワークフロー実装
+  - browserless.io v2 API で X.com アカウントページのスクリーンショット撮影
+  - Vercel Blob（本番）/ ローカルファイル（開発）に保存
+  - Vercel Cron で毎時0分に自動実行
+
 ## 2025-01
 
 - **スプリント1: 最小限の検索実装**

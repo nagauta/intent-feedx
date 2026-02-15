@@ -48,7 +48,7 @@
 - **意思決定支援UI** — 統計・集計ダッシュボード、データ可視化、レポート生成
 - **自動投稿** — X（Twitter）や他SNSへの自動投稿
 - **通知** — Slack / メール / Webhook
-- **定期自動実行** — cron / スケジューラー / バックグラウンド実行
+- ~~**定期自動実行** — cron / スケジューラー / バックグラウンド実行~~ → 実装済み（Vercel Cron + Workflow）
 - **X.com以外のSNS検索** — Facebook、Instagram、LinkedIn等
 
 ## 技術スタック
@@ -60,7 +60,9 @@
 | ORM | Drizzle ORM |
 | データベース | PostgreSQL (Vercel Postgres) |
 | 認証 | Better Auth |
-| 外部API | SERP API, Twitter oEmbed API |
+| 外部API | SERP API, Twitter oEmbed API, browserless.io v2 |
+| ワークフロー | Vercel Workflow DevKit |
+| ストレージ | Vercel Blob（スクリーンショット保存） |
 | モノレポ | Turborepo |
 | ランタイム | Bun |
 
@@ -109,5 +111,5 @@
 
 ---
 
-**最終更新**: 2026-02-14
-**バージョン**: 2.0.0
+**最終更新**: 2026-02-15
+**バージョン**: 2.1.0
