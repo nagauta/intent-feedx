@@ -97,6 +97,20 @@
 | created_at | timestamp | 作成日時 |
 | deleted_at | timestamp | 論理削除日時 |
 
+### profile_metrics テーブル
+
+| カラム | 型 | 説明 |
+|--------|-----|------|
+| id | serial | PK |
+| account_name | text | アカウント名（例: `raycast_jp`） |
+| followers_count | integer | フォロワー数（nullable） |
+| following_count | integer | フォロー数（nullable） |
+| scraped_at | timestamp | データ取得日時 |
+| created_at | timestamp | レコード作成日時 |
+
+- append-only の時系列テーブル。6時間ごとにスクリーンショットと併せて記録
+- browserless.io `/function` エンドポイントでプロフィールページからDOMスクレイピング
+
 ### ソース固有メタデータ（source_metadata）
 
 **Twitter:**
@@ -111,5 +125,5 @@
 
 ---
 
-**最終更新**: 2026-02-15
-**バージョン**: 2.1.0
+**最終更新**: 2026-02-18
+**バージョン**: 2.2.0

@@ -1,4 +1,4 @@
-import { pgTable, text, boolean, timestamp, serial, jsonb } from 'drizzle-orm/pg-core'
+import { pgTable, text, boolean, timestamp, serial, jsonb, integer } from 'drizzle-orm/pg-core'
 import type { ContentSourceType, SourceMetadata } from '@intent-feedx/shared'
 
 // ===========================================
@@ -68,6 +68,22 @@ export const tweets = pgTable('tweets', {
 export type Tweet = typeof tweets.$inferSelect
 /** @deprecated Use NewContent instead */
 export type NewTweet = typeof tweets.$inferInsert
+
+// ===========================================
+// Profile Metrics Table (フォロワー数推移)
+// ===========================================
+
+export const profileMetrics = pgTable('profile_metrics', {
+  id: serial('id').primaryKey(),
+  accountName: text('account_name').notNull(),
+  followersCount: integer('followers_count'),
+  followingCount: integer('following_count'),
+  scrapedAt: timestamp('scraped_at').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+export type ProfileMetric = typeof profileMetrics.$inferSelect
+export type NewProfileMetric = typeof profileMetrics.$inferInsert
 
 // Auth schema
 export * from './auth-schema'
