@@ -1,6 +1,9 @@
 import { put } from '@vercel/blob'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
+import { db } from '@/db'
+import { profileMetrics } from '@/db/schema'
+import type { ProfileData } from '@/lib/browserless'
 
 export interface SaveResult {
   url: string
@@ -33,4 +36,34 @@ export async function saveScreenshot(
   writeFileSync(localPath, imageBuffer)
 
   return { url: `file://${localPath}`, pathname, uploadedAt: timestamp }
+}
+
+export interface SaveProfileMetricsResult {
+  id: number
+  accountName: string
+  followersCount: number | null
+  followingCount: number | null
+  scrapedAt: string
+}
+
+export async function saveProfileMetrics(data: ProfileData): Promise<SaveProfileMetricsResult> {
+  'use step'
+
+  const [row] = await db
+    .insert(profileMetrics)
+    .values({
+      accountName: data.accountName,
+      followersCount: data.followersCount,
+      followingCount: data.followingCount,
+      scrapedAt: new Date(data.scrapedAt),
+    })
+    .returning()
+
+  return {
+    id: row.id,
+    accountName: row.accountName,
+    followersCount: row.followersCount,
+    followingCount: row.followingCount,
+    scrapedAt: row.scrapedAt.toISOString(),
+  }
 }

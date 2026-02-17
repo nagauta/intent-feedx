@@ -75,13 +75,26 @@ PR #7 をマージで自動デプロイ。
 ```
 apps/web/
   src/workflows/screenshot.ts    # 'use workflow' — ワークフロー定義
-  src/lib/browserless.ts         # 'use step' — スクリーンショット撮影
-  src/lib/storage.ts             # 'use step' — Blob / ローカル保存
+  src/lib/browserless.ts         # 'use step' — スクリーンショット撮影 + プロフィールデータ抽出
+  src/lib/storage.ts             # 'use step' — Blob / ローカル保存 + DB保存
   src/app/api/cron/screenshot/   # Cron エンドポイント (start() で起動)
 ```
 
 - `withWorkflow()` で `next.config.ts` をラップ
 - `.well-known/workflow/v1/*` ルートはビルド時に自動生成
+
+### ワークフローステップ
+
+```
+Step 1: takeScreenshot()       — browserless /screenshot でスクリーンショット撮影
+Step 2: saveScreenshot()       — Vercel Blob にアップロード
+Step 3: scrapeProfileData()    — browserless /function でフォロワー数等を抽出
+Step 4: saveProfileMetrics()   — PostgreSQL profile_metrics テーブルに保存
+```
+
+- Step 3-4 は try/catch で囲まれており、失敗しても Step 1-2 の結果は保持される
+- `scrapeProfileData()` は `/function` エンドポイントで Puppeteer JS を実行し、`a[href$="/followers"]` 等のセレクタからテキストを抽出
+- "1,234" → `1234`、"12.5K" → `12500` のようにパース
 
 ---
 
